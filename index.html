@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARVEL TV - نظام إدارة المبيعات والسيرفرات</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK (v10 Modern Modular Loaded via CDN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase Configuration الخاص بك
+        const firebaseConfig = {
+          apiKey: "AIzaSyDW2M3wiV5dsJH5CS8XvcGvUaZpjHg6WHM",
+          authDomain: "system-server-3ae25.firebaseapp.com",
+          projectId: "system-server-3ae25",
+          storageBucket: "system-server-3ae25.firebasestorage.app",
+          messagingSenderId: "1007058792861",
+          appId: "1:1007058792861:web:6a448b74d09213733a7f74",
+          measurementId: "G-MSQ8P2NCPL"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Export db globally for scripts
+        window.db = db;
+        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot };
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #0f0f12;
+            --card-bg: #1a1a24;
+            --primary-color: #ff0055;
+            --secondary-color: #7928ca;
+            --text-color: #ffffff;
+            --text-muted: #a0a0b0;
+            --input-bg: #13131c;
+            --input-border: rgba(255, 255, 255, 0.1);
+            --record-bg: rgba(26, 26, 36, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 10px;
+        }
+
+        /* شاشة الدخول المصغرة */
+        .login-wrapper {
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 0, 85, 0.3);
+            border-radius: 16px;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(255, 0, 85, 0.15);
+        }
+
+        .login-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: rgba(255, 0, 85, 0.1);
+            border: 2px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin: 0 auto 12px;
+        }
+
+        .login-card h2 {
+            font-size: 1.4rem;
+            font-weight: 900;
+            margin-bottom: 4px;
+            background: linear-gradient(45deg, #ff0055, #ff5000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-card p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px; }
+        .login-error { color: #ff3366; font-size: 0.82rem; margin-top: 8px; display: none; font-weight: 700; }
+
+        /* الواجهة الرئيسية */
+        .app-container {
+            width: 100%;
+            max-width: 1100px;
+            display: none;
+            align-self: flex-start;
+        }
+
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff0055, #ff5000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+        header p { color: var(--text-muted); font-size: 0.88rem; }
+
+        .live-clock-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(26, 26, 36, 0.8);
+            border: 1px solid rgba(255, 0, 85, 0.3);
+            color: #00ff66;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            margin-top: 10px;
+            direction: ltr;
+        }
+
+        .tab-menu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-muted);
+            padding: 11px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active-rec {
+            background: linear-gradient(135deg, rgba(255, 0, 85, 0.2), rgba(121, 40, 202, 0.2));
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .tab-btn.active-srv {
+            background: linear-gradient(135deg, rgba(0, 255, 102, 0.15), rgba(121, 40, 202, 0.2));
+            border-color: #00ff66;
+            color: #fff;
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .category-box {
+            background: var(--card-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .category-title { font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+        .category-title i { color: var(--primary-color); }
+
+        .search-box { position: relative; min-width: 220px; flex: 1; max-width: 350px; }
+        .search-input {
+            width: 100%;
+            padding: 8px 34px 8px 12px !important;
+            border-radius: 20px !important;
+            font-size: 0.82rem !important;
+            border: 1px solid var(--input-border) !important;
+            background-color: var(--input-bg) !important;
+            color: var(--text-color) !important;
+        }
+        .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+
+        input, select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-color);
+            padding: 8px 11px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            outline: none;
+        }
+
+        .auth-box { grid-column: 1 / -1; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 10px; padding: 12px 14px; margin-top: 4px; }
+        .auth-options { display: flex; gap: 20px; margin-bottom: 10px; }
+        .auth-options label { color: var(--text-color); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+
+        .btn-action {
+            width: 100%; padding: 10px; margin-top: 14px; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 800; cursor: pointer;
+        }
+        .btn-pink { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; }
+        .btn-green { background: linear-gradient(135deg, #00b843, #008f33); color: white; }
+
+        .records-wrapper { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .record-card {
+            background: var(--record-bg); border: 1px solid var(--input-border); border-radius: 10px; padding: 10px 14px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) auto; gap: 10px; align-items: center;
+        }
+
+        .info-group { display: flex; flex-direction: column; gap: 2px; }
+        .info-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+        .info-value { font-size: 0.85rem; font-weight: 700; color: var(--text-color); word-break: break-word; }
+
+        .badge-tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 0.75rem; font-weight: 700; width: fit-content; }
+        .badge-user { background: rgba(255, 0, 85, 0.15); color: #ff5085; border: 1px solid rgba(255, 0, 85, 0.3); }
+        .badge-code { background: rgba(0, 255, 102, 0.15); color: #00ff66; border: 1px solid rgba(0, 255, 102, 0.3); }
+
+        .btn-del { background: rgba(255, 0, 85, 0.15); color: var(--primary-color); border: 1px solid rgba(255, 0, 85, 0.3); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: 700; }
+        .btn-del:hover { background: var(--primary-color); color: white; }
+        .no-data { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.88rem; }
+    </style>
+</head>
+<body>
+
+<!-- 1. شاشة الدخول -->
+<div id="login-view" class="login-wrapper">
+    <div class="login-card">
+        <div class="login-icon"><i class="fas fa-lock"></i></div>
+        <h2>MARVEL TV Admin</h2>
+        <p>أدخل كلمة السر الخاصة بلوحة التحكم</p>
+        <form onsubmit="handleLogin(event)">
+            <div class="field" style="text-align: right;">
+                <label>كلمة السر</label>
+                <input type="password" id="admin-pass-input" placeholder="أدخل كلمة السر...">
+            </div>
+            <div id="login-error-msg" class="login-error">كلمة السر غير صحيحة!</div>
+            <button type="submit" class="btn-action btn-pink">دخول اللوحة</button>
+        </form>
+    </div>
+</div>
+
+<!-- 2. الواجهة الرئيسية -->
+<div id="dashboard-view" class="app-container">
+    <header>
+        <h1>MARVEL TV CONTROL</h1>
+        <p>لوحة التحكم بالريسيفرات واشتراكات السيرفرات (مربوط بالسحابة ☁️)</p>
+        <div class="live-clock-badge">
+            <i class="fas fa-clock"></i> <span id="realtime-clock">--/--/---- --:--:-- --</span>
+        </div>
+    </header>
+
+    <div class="tab-menu">
+        <button class="tab-btn active-rec" id="btn-rec" onclick="switchTab('rec')"><i class="fas fa-tv"></i> إدارة مبيعات الريسيفرات</button>
+        <button class="tab-btn" id="btn-srv" onclick="switchTab('srv')"><i class="fas fa-server"></i> إدارة اشتراكات السيرفرات</button>
+    </div>
+
+    <!-- Section 1: Receivers -->
+    <div id="panel-rec" class="tab-panel active">
+        <div class="category-box">
+            <div class="category-title" style="color: var(--primary-color); margin-bottom:14px;"><i class="fas fa-plus-circle"></i> إضافة طلب ريسيفر جديد</div>
+            <form id="form-rec" onsubmit="addReceiver(event)">
+                <div class="form-grid">
+                    <div class="field"><label>اسم العميل</label><input type="text" id="rec-client" required placeholder="أدخل اسم العميل"></div>
+                    <div class="field"><label>رقم التليفون</label><input type="tel" id="rec-phone" required placeholder="01xxxxxxxx"></div>
+                    <div class="field"><label>العنوان</label><input type="text" id="rec-address" required placeholder="العنوان بالتفصيل"></div>
+                    <div class="field"><label>نوع / اسم الريسيفر</label><input type="text" id="rec-model" required placeholder="مثال: سيناتور / نوفا"></div>
+                    <div class="field"><label>مبلغ التحصيل (ج.م)</label><input type="number" id="rec-price" step="0.01" required placeholder="0.00"></div>
+                    <div class="field"><label>تاريخ الشراء</label><input type="date" id="rec-date" required></div>
+                </div>
+                <button type="submit" class="btn-action btn-pink">حفظ بيانات الريسيفر</button>
+            </form>
+        </div>
+
+        <div class="category-box">
+            <div class="section-header">
+                <div class="category-title"><i class="fas fa-list"></i> سجل مبيعات الريسيفرات</div>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="search-rec" class="search-input" oninput="renderLocal()" placeholder="ابحث باسم العميل، الهاتف، العنوان، أو الريسيفر...">
+                </div>
+            </div>
+            <div id="list-rec" class="records-wrapper"></div>
+        </div>
+    </div>
+
+    <!-- Section 2: Servers -->
+    <div id="panel-srv" class="tab-panel">
+        <div class="category-box">
+            <div class="category-title" style="color: #00ff66; margin-bottom:14px;"><i class="fas fa-bolt"></i> إضافة اشتراك سيرفر جديد</div>
+            <form id="form-srv" onsubmit="addServer(event)">
+                <div class="form-grid">
+                    <div class="field"><label>اسم العميل</label><input type="text" id="srv-client" required placeholder="أدخل اسم العميل"></div>
+                    <div class="field"><label>رقم التليفون</label><input type="tel" id="srv-phone" required placeholder="01xxxxxxxx"></div>
+                    <div class="field"><label>اسم السيرفر</label><input type="text" id="srv-name" required placeholder="مثال: MARVEL / VIP"></div>
+                    <div class="field"><label>المبلغ (ج.م)</label><input type="number" id="srv-price" step="0.01" required placeholder="0.00"></div>
+                    <div class="field"><label>تاريخ ووقت الشراء</label><input type="datetime-local" id="srv-datetime" required></div>
+                    <div class="field">
+                        <label>مدة الاشتراك</label>
+                        <select id="srv-duration" required>
+                            <option value="شهر واحد">شهر واحد</option>
+                            <option value="3 أشهر">3 أشهر</option>
+                            <option value="6 أشهر">6 أشهر</option>
+                            <option value="سنة">سنة كاملة</option>
+                            <option value="سنتين">سنتين</option>
+                        </select>
+                    </div>
+
+                    <div class="auth-box">
+                        <div class="auth-options">
+                            <label><input type="radio" name="auth_type" value="userpass" checked onclick="toggleAuth()"> يوزر وباسورد وهوســت</label>
+                            <label><input type="radio" name="auth_type" value="code" onclick="toggleAuth()"> كود تفعيل مباشر فقط</label>
+                        </div>
+
+                        <div id="auth-userpass-fields" class="form-grid">
+                            <div class="field"><label>يوزر (Username)</label><input type="text" id="srv-user" placeholder="أدخل اليوزر"></div>
+                            <div class="field"><label>باسورد (Password)</label><input type="text" id="srv-pass" placeholder="أدخل الباسورد"></div>
+                            <div class="field"><label>هوست (Host / URL)</label><input type="text" id="srv-host" placeholder="mar99.pw"></div>
+                        </div>
+
+                        <div id="auth-code-fields" class="field" style="display: none;">
+                            <label>كود الاشتراك (Activation Code)</label>
+                            <input type="text" id="srv-code" placeholder="أدخل كود التفعيل هنا...">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-action btn-green">حفظ بيانات السيرفر</button>
+            </form>
+        </div>
+
+        <div class="category-box">
+            <div class="section-header">
+                <div class="category-title"><i class="fas fa-database"></i> سجل اشتراكات السيرفرات</div>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="search-srv" class="search-input" oninput="renderLocal()" placeholder="ابحث بالاسم، الهاتف، اليوزر، الباسورد، الهوست، الكود...">
+                </div>
+            </div>
+            <div id="list-srv" class="records-wrapper"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ADMIN_PASSWORD = "108"; 
+
+    function handleLogin(e) {
+        e.preventDefault();
+        if (document.getElementById('admin-pass-input').value === ADMIN_PASSWORD) {
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'block';
+            document.body.style.alignItems = 'flex-start';
+            initFirebaseRealtimeSync();
+        } else {
+            document.getElementById('login-error-msg').style.display = 'block';
+        }
+    }
+
+    function updateClockAndInputs() {
+        const now = new Date();
+        const clockElem = document.getElementById('realtime-clock');
+        if (clockElem) {
+            clockElem.textContent = now.toLocaleString('en-US', {
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+            });
+        }
+    }
+
+    function resetInputsToCurrentTime() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        document.getElementById('rec-date').value = `${year}-${month}-${day}`;
+
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('srv-datetime').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    setInterval(updateClockAndInputs, 1000);
+    updateClockAndInputs();
+    resetInputsToCurrentTime();
+
+    let receivers = [];
+    let servers = [];
+
+    // Realtime Sync with Firebase Firestore
+    function initFirebaseRealtimeSync() {
+        if (!window.db) return;
+        const { collection, onSnapshot } = window.firestoreTools;
+
+        // Sync Receivers Collection
+        onSnapshot(collection(window.db, "receivers"), (snapshot) => {
+            receivers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderLocal();
+        });
+
+        // Sync Servers Collection
+        onSnapshot(collection(window.db, "servers"), (snapshot) => {
+            servers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderLocal();
+        });
+    }
+
+    function switchTab(type) {
+        document.getElementById('btn-rec').className = type === 'rec' ? 'tab-btn active-rec' : 'tab-btn';
+        document.getElementById('btn-srv').className = type === 'srv' ? 'tab-btn active-srv' : 'tab-btn';
+        document.getElementById('panel-rec').classList.toggle('active', type === 'rec');
+        document.getElementById('panel-srv').classList.toggle('active', type === 'srv');
+    }
+
+    function toggleAuth() {
+        const authType = document.querySelector('input[name="auth_type"]:checked').value;
+        document.getElementById('auth-userpass-fields').style.display = authType === 'userpass' ? 'grid' : 'none';
+        document.getElementById('auth-code-fields').style.display = authType === 'code' ? 'flex' : 'none';
+    }
+
+    async function addReceiver(e) {
+        e.preventDefault();
+        const newObj = {
+            client: document.getElementById('rec-client').value,
+            phone: document.getElementById('rec-phone').value,
+            address: document.getElementById('rec-address').value,
+            model: document.getElementById('rec-model').value,
+            price: document.getElementById('rec-price').value,
+            date: document.getElementById('rec-date').value,
+            createdAt: Date.now()
+        };
+
+        if (window.db) {
+            await window.firestoreTools.addDoc(window.firestoreTools.collection(window.db, "receivers"), newObj);
+        }
+        document.getElementById('form-rec').reset();
+        resetInputsToCurrentTime();
+    }
+
+    async function addServer(e) {
+        e.preventDefault();
+        const authType = document.querySelector('input[name="auth_type"]:checked').value;
+        const rawDt = document.getElementById('srv-datetime').value;
+
+        const newObj = {
+            client: document.getElementById('srv-client').value,
+            phone: document.getElementById('srv-phone').value,
+            name: document.getElementById('srv-name').value,
+            price: document.getElementById('srv-price').value,
+            datetime: rawDt ? rawDt.replace('T', ' ') : '',
+            duration: document.getElementById('srv-duration').value,
+            authType: authType,
+            user: authType === 'userpass' ? document.getElementById('srv-user').value : '',
+            pass: authType === 'userpass' ? document.getElementById('srv-pass').value : '',
+            host: authType === 'userpass' ? document.getElementById('srv-host').value : '',
+            code: authType === 'code' ? document.getElementById('srv-code').value : '',
+            createdAt: Date.now()
+        };
+
+        if (window.db) {
+            await window.firestoreTools.addDoc(window.firestoreTools.collection(window.db, "servers"), newObj);
+        }
+        document.getElementById('form-srv').reset();
+        resetInputsToCurrentTime();
+    }
+
+    async function deleteRec(id) {
+        if (window.db) {
+            await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "receivers", id));
+        }
+    }
+
+    async function deleteSrv(id) {
+        if (window.db) {
+            await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "servers", id));
+        }
+    }
+
+    function renderLocal() {
+        const searchRecQuery = (document.getElementById('search-rec')?.value || '').toLowerCase().trim();
+        const searchSrvQuery = (document.getElementById('search-srv')?.value || '').toLowerCase().trim();
+
+        // Receivers Render
+        const recContainer = document.getElementById('list-rec');
+        const filteredReceivers = receivers.filter(r => 
+            (r.client || '').toLowerCase().includes(searchRecQuery) ||
+            (r.phone || '').toLowerCase().includes(searchRecQuery) ||
+            (r.address || '').toLowerCase().includes(searchRecQuery) ||
+            (r.model || '').toLowerCase().includes(searchRecQuery)
+        );
+
+        if (filteredReceivers.length === 0) {
+            recContainer.innerHTML = `<div class="no-data">لا توجد بيانات مسجلة</div>`;
+        } else {
+            recContainer.innerHTML = filteredReceivers.map(r => `
+                <div class="record-card">
+                    <div class="info-group"><span class="info-label">العميل</span><span class="info-value">${r.client}</span></div>
+                    <div class="info-group"><span class="info-label">الهاتف</span><span class="info-value" style="direction: ltr; text-align: right;">${r.phone}</span></div>
+                    <div class="info-group"><span class="info-label">العنوان</span><span class="info-value">${r.address}</span></div>
+                    <div class="info-group"><span class="info-label">الريسيفر</span><span class="info-value">${r.model}</span></div>
+                    <div class="info-group"><span class="info-label">المبلغ</span><span class="info-value" style="color: var(--primary-color);">${r.price} ج.م</span></div>
+                    <div class="info-group"><span class="info-label">التاريخ</span><span class="info-value">${r.date}</span></div>
+                    <button class="btn-del" onclick="deleteRec('${r.id}')">حذف</button>
+                </div>
+            `).join('');
+        }
+
+        // Servers Render
+        const srvContainer = document.getElementById('list-srv');
+        const filteredServers = servers.filter(s => 
+            (s.client || '').toLowerCase().includes(searchSrvQuery) ||
+            (s.phone || '').toLowerCase().includes(searchSrvQuery) ||
+            (s.name || '').toLowerCase().includes(searchSrvQuery) ||
+            (s.user || '').toLowerCase().includes(searchSrvQuery) ||
+            (s.pass || '').toLowerCase().includes(searchSrvQuery) ||
+            (s.host || '').toLowerCase().includes(searchSrvQuery) ||
+            (s.code || '').toLowerCase().includes(searchSrvQuery)
+        );
+
+        if (filteredServers.length === 0) {
+            srvContainer.innerHTML = `<div class="no-data">لا توجد بيانات مسجلة</div>`;
+        } else {
+            srvContainer.innerHTML = filteredServers.map(s => {
+                let authHtml = s.authType === 'userpass' 
+                    ? `<span class="badge-tag badge-user">يوزر: ${s.user} | باس: ${s.pass} | هوست: ${s.host || 'غير محدد'}</span>`
+                    : `<span class="badge-tag badge-code">كود التفعيل: ${s.code}</span>`;
+
+                return `
+                    <div class="record-card">
+                        <div class="info-group"><span class="info-label">العميل والهاتف</span><span class="info-value">${s.client || 'غير محدد'} (${s.phone || 'بدون هاتف'})</span></div>
+                        <div class="info-group"><span class="info-label">السيرفر</span><span class="info-value">${s.name}</span></div>
+                        <div class="info-group" style="grid-column: span 2;"><span class="info-label">بيانات التفعيل والدخول</span><div class="info-value" style="margin-top:2px;">${authHtml}</div></div>
+                        <div class="info-group"><span class="info-label">المبلغ والمدة</span><span class="info-value" style="color: #00ff66;">${s.price} ج.م (${s.duration})</span></div>
+                        <div class="info-group"><span class="info-label">الوقت والتاريخ</span><span class="info-value">${s.datetime}</span></div>
+                        <button class="btn-del" onclick="deleteSrv('${s.id}')">حذف</button>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+</script>
+</body>
+</html>
