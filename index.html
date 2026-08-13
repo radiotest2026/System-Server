@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MARVEL TV - نظام إدارة المبيعات والسيرفرات</title>
+    <title>حسابات الشغل - نظام إدارة المبيعات والسيرفرات</title>
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,7 +11,7 @@
     <!-- Firebase SDK (v10 Modern Modular Loaded via CDN) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // Firebase Configuration الخاص بك
         const firebaseConfig = {
@@ -28,9 +28,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Export db globally for scripts
         window.db = db;
-        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot };
+        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc };
     </script>
 
     <style>
@@ -43,7 +42,9 @@
             --text-muted: #a0a0b0;
             --input-bg: #13131c;
             --input-border: rgba(255, 255, 255, 0.1);
-            --record-bg: rgba(26, 26, 36, 0.7);
+            --record-bg: rgba(26, 26, 36, 0.85);
+            --green-glow: #00ff66;
+            --gold-glow: #ffc107;
         }
 
         * {
@@ -60,10 +61,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 15px 10px;
+            padding: 15px 10px 100px;
         }
 
-        /* شاشة الدخول المصغرة */
         .login-wrapper {
             width: 100%;
             max-width: 380px;
@@ -104,10 +104,9 @@
         .login-card p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px; }
         .login-error { color: #ff3366; font-size: 0.82rem; margin-top: 8px; display: none; font-weight: 700; }
 
-        /* الواجهة الرئيسية */
         .app-container {
             width: 100%;
-            max-width: 1100px;
+            max-width: 1150px;
             display: none;
             align-self: flex-start;
         }
@@ -129,7 +128,7 @@
             gap: 6px;
             background: rgba(26, 26, 36, 0.8);
             border: 1px solid rgba(255, 0, 85, 0.3);
-            color: #00ff66;
+            color: var(--green-glow);
             padding: 5px 14px;
             border-radius: 20px;
             font-size: 0.82rem;
@@ -168,7 +167,7 @@
 
         .tab-btn.active-srv {
             background: linear-gradient(135deg, rgba(0, 255, 102, 0.15), rgba(121, 40, 202, 0.2));
-            border-color: #00ff66;
+            border-color: var(--green-glow);
             color: #fff;
         }
 
@@ -207,7 +206,7 @@
         }
         .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
         .field { display: flex; flex-direction: column; gap: 4px; }
         label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
 
@@ -231,23 +230,119 @@
         .btn-pink { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; }
         .btn-green { background: linear-gradient(135deg, #00b843, #008f33); color: white; }
 
-        .records-wrapper { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        /* سجل البيانات والتصميم المنظم لكل عنصر */
+        .records-wrapper { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        
         .record-card {
-            background: var(--record-bg); border: 1px solid var(--input-border); border-radius: 10px; padding: 10px 14px;
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) auto; gap: 10px; align-items: center;
+            background: var(--record-bg); 
+            border: 1px solid var(--input-border); 
+            border-radius: 12px; 
+            padding: 12px 16px;
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) auto; 
+            gap: 12px; 
+            align-items: center;
+            transition: border-color 0.2s;
+        }
+
+        .record-card:hover {
+            border-color: rgba(255, 0, 85, 0.4);
         }
 
         .info-group { display: flex; flex-direction: column; gap: 2px; }
-        .info-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
-        .info-value { font-size: 0.85rem; font-weight: 700; color: var(--text-color); word-break: break-word; }
+        .info-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; }
+        .info-value { font-size: 0.88rem; font-weight: 800; color: var(--text-color); word-break: break-word; }
 
-        .badge-tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 0.75rem; font-weight: 700; width: fit-content; }
+        .badge-tag { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; width: fit-content; }
         .badge-user { background: rgba(255, 0, 85, 0.15); color: #ff5085; border: 1px solid rgba(255, 0, 85, 0.3); }
-        .badge-code { background: rgba(0, 255, 102, 0.15); color: #00ff66; border: 1px solid rgba(0, 255, 102, 0.3); }
+        .badge-code { background: rgba(0, 255, 102, 0.15); color: var(--green-glow); border: 1px solid rgba(0, 255, 102, 0.3); }
 
-        .btn-del { background: rgba(255, 0, 85, 0.15); color: var(--primary-color); border: 1px solid rgba(255, 0, 85, 0.3); padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-weight: 700; }
+        .btn-del { background: rgba(255, 0, 85, 0.15); color: var(--primary-color); border: 1px solid rgba(255, 0, 85, 0.3); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 800; }
         .btn-del:hover { background: var(--primary-color); color: white; }
         .no-data { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.88rem; }
+
+        /* شريط الأرباح السفلي */
+        .finance-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(22, 22, 32, 0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 0, 85, 0.3);
+            padding: 10px 15px;
+            display: flex;
+            justify-style: space-around;
+            align-items: center;
+            z-index: 999;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.5);
+        }
+
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-title {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .stat-value {
+            font-size: 0.95rem;
+            font-weight: 900;
+            font-family: monospace, 'Cairo', sans-serif;
+        }
+
+        .btn-reset-day {
+            background: rgba(255, 0, 85, 0.2);
+            border: 1px solid var(--primary-color);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-reset-day:hover {
+            background: var(--primary-color);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+        }
+
+        @media (max-width: 650px) {
+            .finance-bar {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                padding: 8px 12px;
+            }
+            .stat-card { gap: 6px; }
+            .stat-icon { width: 30px; height: 30px; font-size: 0.85rem; }
+            .stat-value { font-size: 0.85rem; }
+            body { padding-bottom: 140px; }
+        }
     </style>
 </head>
 <body>
@@ -256,7 +351,7 @@
 <div id="login-view" class="login-wrapper">
     <div class="login-card">
         <div class="login-icon"><i class="fas fa-lock"></i></div>
-        <h2>MARVEL TV Admin</h2>
+        <h2>حسابات الشغل</h2>
         <p>أدخل كلمة السر الخاصة بلوحة التحكم</p>
         <form onsubmit="handleLogin(event)">
             <div class="field" style="text-align: right;">
@@ -272,8 +367,8 @@
 <!-- 2. الواجهة الرئيسية -->
 <div id="dashboard-view" class="app-container">
     <header>
-        <h1>MARVEL TV CONTROL</h1>
-        <p>لوحة التحكم بالريسيفرات واشتراكات السيرفرات (مربوط بالسحابة ☁️)</p>
+        <h1>حسابات الشغل</h1>
+        <p>لوحة التحكم بالريسيفرات واشتراكات السيرفرات والأرباح</p>
         <div class="live-clock-badge">
             <i class="fas fa-clock"></i> <span id="realtime-clock">--/--/---- --:--:-- --</span>
         </div>
@@ -294,7 +389,8 @@
                     <div class="field"><label>رقم التليفون</label><input type="tel" id="rec-phone" required placeholder="01xxxxxxxx"></div>
                     <div class="field"><label>العنوان</label><input type="text" id="rec-address" required placeholder="العنوان بالتفصيل"></div>
                     <div class="field"><label>نوع / اسم الريسيفر</label><input type="text" id="rec-model" required placeholder="مثال: سيناتور / نوفا"></div>
-                    <div class="field"><label>مبلغ التحصيل (ج.م)</label><input type="number" id="rec-price" step="0.01" required placeholder="0.00"></div>
+                    <div class="field"><label>سعر التكلفة عليّ (ج.م)</label><input type="number" id="rec-cost" step="0.01" required placeholder="0.00"></div>
+                    <div class="field"><label>سعر البيع للعميل (ج.م)</label><input type="number" id="rec-price" step="0.01" required placeholder="0.00"></div>
                     <div class="field"><label>تاريخ الشراء</label><input type="date" id="rec-date" required></div>
                 </div>
                 <button type="submit" class="btn-action btn-pink">حفظ بيانات الريسيفر</button>
@@ -316,13 +412,14 @@
     <!-- Section 2: Servers -->
     <div id="panel-srv" class="tab-panel">
         <div class="category-box">
-            <div class="category-title" style="color: #00ff66; margin-bottom:14px;"><i class="fas fa-bolt"></i> إضافة اشتراك سيرفر جديد</div>
+            <div class="category-title" style="color: var(--green-glow); margin-bottom:14px;"><i class="fas fa-bolt"></i> إضافة اشتراك سيرفر جديد</div>
             <form id="form-srv" onsubmit="addServer(event)">
                 <div class="form-grid">
                     <div class="field"><label>اسم العميل</label><input type="text" id="srv-client" required placeholder="أدخل اسم العميل"></div>
                     <div class="field"><label>رقم التليفون</label><input type="tel" id="srv-phone" required placeholder="01xxxxxxxx"></div>
-                    <div class="field"><label>اسم السيرفر</label><input type="text" id="srv-name" required placeholder="مثال: MARVEL / VIP"></div>
-                    <div class="field"><label>المبلغ (ج.م)</label><input type="number" id="srv-price" step="0.01" required placeholder="0.00"></div>
+                    <div class="field"><label>اسم السيرفر</label><input type="text" id="srv-name" required placeholder="مثال: VIP / MARVEL"></div>
+                    <div class="field"><label>سعر التكلفة عليّ (ج.م)</label><input type="number" id="srv-cost" step="0.01" required placeholder="0.00"></div>
+                    <div class="field"><label>سعر البيع للعميل (ج.م)</label><input type="number" id="srv-price" step="0.01" required placeholder="0.00"></div>
                     <div class="field"><label>تاريخ ووقت الشراء</label><input type="datetime-local" id="srv-datetime" required></div>
                     <div class="field">
                         <label>مدة الاشتراك</label>
@@ -330,7 +427,7 @@
                             <option value="شهر واحد">شهر واحد</option>
                             <option value="3 أشهر">3 أشهر</option>
                             <option value="6 أشهر">6 أشهر</option>
-                            <option value="سنة">سنة كاملة</option>
+                            <option value="سنة كاملة">سنة كاملة</option>
                             <option value="سنتين">سنتين</option>
                         </select>
                     </div>
@@ -344,7 +441,7 @@
                         <div id="auth-userpass-fields" class="form-grid">
                             <div class="field"><label>يوزر (Username)</label><input type="text" id="srv-user" placeholder="أدخل اليوزر"></div>
                             <div class="field"><label>باسورد (Password)</label><input type="text" id="srv-pass" placeholder="أدخل الباسورد"></div>
-                            <div class="field"><label>هوست (Host / URL)</label><input type="text" id="srv-host" placeholder="mar99.pw"></div>
+                            <div class="field"><label>هوست (Host / URL)</label><input type="text" id="srv-host" placeholder="domain.com"></div>
                         </div>
 
                         <div id="auth-code-fields" class="field" style="display: none;">
@@ -368,10 +465,50 @@
             <div id="list-srv" class="records-wrapper"></div>
         </div>
     </div>
+
+    <!-- 3. شريط الأرباح السفلي -->
+    <div class="finance-bar">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(255, 0, 85, 0.2); color: var(--primary-color);">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-title">إجمالي تحصيل الوردية</span>
+                <span class="stat-value" id="stat-today-sales" style="color: #fff;">0 ج.م</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(0, 255, 102, 0.2); color: var(--green-glow);">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-title">صافي أرباح الوردية</span>
+                <span class="stat-value" id="stat-today-profit" style="color: var(--green-glow);">0 ج.م</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(255, 193, 7, 0.2); color: var(--gold-glow);">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-title">إجمالي الأرباح الكلية</span>
+                <span class="stat-value" id="stat-total-profit" style="color: var(--gold-glow);">0 ج.م</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <button class="btn-reset-day" onclick="manualResetSession()">
+                <i class="fas fa-sync-alt"></i> تصفير اليوم
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
     const ADMIN_PASSWORD = "108"; 
+    let currentShiftStartTime = parseInt(localStorage.getItem('marvel_shift_start_time')) || Date.now();
 
     function handleLogin(e) {
         e.preventDefault();
@@ -419,13 +556,11 @@
         if (!window.db) return;
         const { collection, onSnapshot } = window.firestoreTools;
 
-        // Sync Receivers Collection
         onSnapshot(collection(window.db, "receivers"), (snapshot) => {
             receivers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderLocal();
         });
 
-        // Sync Servers Collection
         onSnapshot(collection(window.db, "servers"), (snapshot) => {
             servers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderLocal();
@@ -447,13 +582,19 @@
 
     async function addReceiver(e) {
         e.preventDefault();
+        const cost = parseFloat(document.getElementById('rec-cost').value) || 0;
+        const price = parseFloat(document.getElementById('rec-price').value) || 0;
+        const dateVal = document.getElementById('rec-date').value;
+
         const newObj = {
             client: document.getElementById('rec-client').value,
             phone: document.getElementById('rec-phone').value,
             address: document.getElementById('rec-address').value,
             model: document.getElementById('rec-model').value,
-            price: document.getElementById('rec-price').value,
-            date: document.getElementById('rec-date').value,
+            cost: cost,
+            price: price,
+            profit: price - cost,
+            date: dateVal,
             createdAt: Date.now()
         };
 
@@ -468,12 +609,16 @@
         e.preventDefault();
         const authType = document.querySelector('input[name="auth_type"]:checked').value;
         const rawDt = document.getElementById('srv-datetime').value;
+        const cost = parseFloat(document.getElementById('srv-cost').value) || 0;
+        const price = parseFloat(document.getElementById('srv-price').value) || 0;
 
         const newObj = {
             client: document.getElementById('srv-client').value,
             phone: document.getElementById('srv-phone').value,
             name: document.getElementById('srv-name').value,
-            price: document.getElementById('srv-price').value,
+            cost: cost,
+            price: price,
+            profit: price - cost,
             datetime: rawDt ? rawDt.replace('T', ' ') : '',
             duration: document.getElementById('srv-duration').value,
             authType: authType,
@@ -507,7 +652,7 @@
         const searchRecQuery = (document.getElementById('search-rec')?.value || '').toLowerCase().trim();
         const searchSrvQuery = (document.getElementById('search-srv')?.value || '').toLowerCase().trim();
 
-        // Receivers Render
+        // 1. Receivers Render
         const recContainer = document.getElementById('list-rec');
         const filteredReceivers = receivers.filter(r => 
             (r.client || '').toLowerCase().includes(searchRecQuery) ||
@@ -521,18 +666,18 @@
         } else {
             recContainer.innerHTML = filteredReceivers.map(r => `
                 <div class="record-card">
-                    <div class="info-group"><span class="info-label">العميل</span><span class="info-value">${r.client}</span></div>
-                    <div class="info-group"><span class="info-label">الهاتف</span><span class="info-value" style="direction: ltr; text-align: right;">${r.phone}</span></div>
+                    <div class="info-group"><span class="info-label">اسم العميل</span><span class="info-value">${r.client}</span></div>
+                    <div class="info-group"><span class="info-label">رقم الهاتف</span><span class="info-value" style="direction: ltr; text-align: right;">${r.phone}</span></div>
                     <div class="info-group"><span class="info-label">العنوان</span><span class="info-value">${r.address}</span></div>
-                    <div class="info-group"><span class="info-label">الريسيفر</span><span class="info-value">${r.model}</span></div>
-                    <div class="info-group"><span class="info-label">المبلغ</span><span class="info-value" style="color: var(--primary-color);">${r.price} ج.م</span></div>
-                    <div class="info-group"><span class="info-label">التاريخ</span><span class="info-value">${r.date}</span></div>
+                    <div class="info-group"><span class="info-label">نوع الريسيفر</span><span class="info-value">${r.model}</span></div>
+                    <div class="info-group"><span class="info-label">البيع (المكسب)</span><span class="info-value" style="color: var(--primary-color);">${r.price} ج.م (<span style="color:var(--green-glow);">+${r.profit || 0}</span>)</span></div>
+                    <div class="info-group"><span class="info-label">تاريخ الشراء</span><span class="info-value">${r.date}</span></div>
                     <button class="btn-del" onclick="deleteRec('${r.id}')">حذف</button>
                 </div>
             `).join('');
         }
 
-        // Servers Render
+        // 2. Servers Render (عرض كل عنصر في خانة مستقلة ومنظمة)
         const srvContainer = document.getElementById('list-srv');
         const filteredServers = servers.filter(s => 
             (s.client || '').toLowerCase().includes(searchSrvQuery) ||
@@ -541,7 +686,8 @@
             (s.user || '').toLowerCase().includes(searchSrvQuery) ||
             (s.pass || '').toLowerCase().includes(searchSrvQuery) ||
             (s.host || '').toLowerCase().includes(searchSrvQuery) ||
-            (s.code || '').toLowerCase().includes(searchSrvQuery)
+            (s.code || '').toLowerCase().includes(searchSrvQuery) ||
+            (s.duration || '').toLowerCase().includes(searchSrvQuery)
         );
 
         if (filteredServers.length === 0) {
@@ -554,15 +700,85 @@
 
                 return `
                     <div class="record-card">
-                        <div class="info-group"><span class="info-label">العميل والهاتف</span><span class="info-value">${s.client || 'غير محدد'} (${s.phone || 'بدون هاتف'})</span></div>
-                        <div class="info-group"><span class="info-label">السيرفر</span><span class="info-value">${s.name}</span></div>
-                        <div class="info-group" style="grid-column: span 2;"><span class="info-label">بيانات التفعيل والدخول</span><div class="info-value" style="margin-top:2px;">${authHtml}</div></div>
-                        <div class="info-group"><span class="info-label">المبلغ والمدة</span><span class="info-value" style="color: #00ff66;">${s.price} ج.م (${s.duration})</span></div>
-                        <div class="info-group"><span class="info-label">الوقت والتاريخ</span><span class="info-value">${s.datetime}</span></div>
+                        <div class="info-group">
+                            <span class="info-label">اسم العميل</span>
+                            <span class="info-value">${s.client || 'غير محدد'}</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">رقم الهاتف</span>
+                            <span class="info-value" style="direction: ltr; text-align: right;">${s.phone || 'بدون هاتف'}</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">اسم السيرفر</span>
+                            <span class="info-value">${s.name}</span>
+                        </div>
+                        <div class="info-group" style="grid-column: span 2;">
+                            <span class="info-label">بيانات التفعيل والدخول</span>
+                            <div class="info-value" style="margin-top:2px;">${authHtml}</div>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">مدة الاشتراك</span>
+                            <span class="info-value" style="color: var(--gold-glow);">${s.duration || 'غير محددة'}</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">سعر البيع (المكسب)</span>
+                            <span class="info-value" style="color: var(--green-glow);">${s.price} ج.م (<span style="color:var(--green-glow);">+${s.profit || 0}</span>)</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label">وقت وتاريخ الشراء</span>
+                            <span class="info-value">${s.datetime}</span>
+                        </div>
                         <button class="btn-del" onclick="deleteSrv('${s.id}')">حذف</button>
                     </div>
                 `;
             }).join('');
+        }
+
+        // 3. حساب الأرباح بناءً على وقت التصفير اليدوي
+        calculateFinancials();
+    }
+
+    function calculateFinancials() {
+        let todaySales = 0;
+        let todayProfit = 0;
+        let totalProfit = 0;
+
+        receivers.forEach(r => {
+            const p = parseFloat(r.price) || 0;
+            const prof = parseFloat(r.profit) || 0;
+            const created = r.createdAt || 0;
+
+            totalProfit += prof;
+
+            if (created >= currentShiftStartTime) {
+                todaySales += p;
+                todayProfit += prof;
+            }
+        });
+
+        servers.forEach(s => {
+            const p = parseFloat(s.price) || 0;
+            const prof = parseFloat(s.profit) || 0;
+            const created = s.createdAt || 0;
+
+            totalProfit += prof;
+
+            if (created >= currentShiftStartTime) {
+                todaySales += p;
+                todayProfit += prof;
+            }
+        });
+
+        document.getElementById('stat-today-sales').textContent = todaySales.toLocaleString('en-US') + ' ج.م';
+        document.getElementById('stat-today-profit').textContent = todayProfit.toLocaleString('en-US') + ' ج.م';
+        document.getElementById('stat-total-profit').textContent = totalProfit.toLocaleString('en-US') + ' ج.م';
+    }
+
+    function manualResetSession() {
+        if (confirm("هل أنت تأكد من تصفير إحصائيات الوردية الحالية للبدء من جديد؟ (لن تتأثر البيانات والاشتراكات المحفوظة)")) {
+            currentShiftStartTime = Date.now();
+            localStorage.setItem('marvel_shift_start_time', currentShiftStartTime);
+            calculateFinancials();
         }
     }
 </script>
