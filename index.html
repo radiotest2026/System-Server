@@ -8,12 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDK (v10 Modern Modular Loaded via CDN) -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Firebase Configuration الخاص بك
         const firebaseConfig = {
           apiKey: "AIzaSyDW2M3wiV5dsJH5CS8XvcGvUaZpjHg6WHM",
           authDomain: "system-server-3ae25.firebaseapp.com",
@@ -24,12 +23,11 @@
           measurementId: "G-MSQ8P2NCPL"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         window.db = db;
-        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc };
+        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot };
     </script>
 
     <style>
@@ -187,6 +185,80 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
 
+        /* صندوق التنبيهات الثابت */
+        .alert-box {
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            display: block;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .alert-box-rec {
+            background: rgba(255, 0, 85, 0.08);
+            border: 1px solid rgba(255, 0, 85, 0.4);
+        }
+
+        .alert-box-srv {
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.4);
+        }
+
+        .alert-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .alert-item {
+            background: rgba(16, 16, 24, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .alert-empty-text {
+            color: var(--green-glow);
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-whatsapp {
+            background: #25d366;
+            color: #fff;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-whatsapp:hover {
+            opacity: 0.9;
+        }
+
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -251,7 +323,6 @@
         .btn-pink { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; }
         .btn-green { background: linear-gradient(135deg, #00b843, #008f33); color: white; }
 
-        /* سجل البطاقات */
         .records-wrapper { display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
         
         .record-card {
@@ -348,7 +419,6 @@
         .btn-del:hover { background: var(--primary-color); color: white; }
         .no-data { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.88rem; }
 
-        /* شريط الأرباح السفلي */
         .finance-bar {
             position: fixed;
             bottom: 0;
@@ -450,6 +520,17 @@
 
     <!-- Section 1: Receivers -->
     <div id="panel-rec" class="tab-panel active">
+        
+        <!-- صندوق تنبيهات الريسيفرات الثابت -->
+        <div id="rec-alert-box" class="alert-box alert-box-rec">
+            <div class="alert-title" style="color: var(--primary-color);">
+                <i class="fas fa-bell"></i> أجهزة مر عليها سنة كاملة (تحتاج متابعة وتجديد)
+            </div>
+            <div id="rec-alert-list" class="alert-list">
+                <div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد أجهزة مر عليها سنة حالياً.</div>
+            </div>
+        </div>
+
         <div class="category-box">
             <div class="category-title" style="color: var(--primary-color); margin-bottom:14px;"><i class="fas fa-plus-circle"></i> إضافة طلب ريسيفر جديد</div>
             <form id="form-rec" onsubmit="addReceiver(event)">
@@ -501,6 +582,17 @@
 
     <!-- Section 2: Servers -->
     <div id="panel-srv" class="tab-panel server-panel">
+
+        <!-- صندوق تنبيهات السيرفرات الثابت -->
+        <div id="srv-alert-box" class="alert-box alert-box-srv">
+            <div class="alert-title" style="color: var(--gold-glow);">
+                <i class="fas fa-exclamation-triangle"></i> اشتراكات سيرفرات تنتهي غداً (أرسل تذكيراً للعميل)
+            </div>
+            <div id="srv-alert-list" class="alert-list">
+                <div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد اشتراكات تنتهي غداً حالياً.</div>
+            </div>
+        </div>
+
         <div class="category-box">
             <div class="category-title" style="color: var(--green-glow); margin-bottom:14px;"><i class="fas fa-bolt"></i> إضافة اشتراك سيرفر جديد</div>
             <form id="form-srv" onsubmit="addServer(event)">
@@ -668,7 +760,6 @@
     let receivers = [];
     let servers = [];
 
-    // Realtime Sync with Firebase Firestore
     function initFirebaseRealtimeSync() {
         if (!window.db) return;
         const { collection, onSnapshot } = window.firestoreTools;
@@ -765,11 +856,90 @@
         }
     }
 
+    // فحص وتحديث صناديق التنبيهات
+    function updateAlerts() {
+        const now = new Date();
+        const oneYearMs = 365 * 24 * 60 * 60 * 1000;
+        const oneDayMs = 24 * 60 * 60 * 1000;
+
+        // 1. فحص الريسيفرات (مر عليها سنة)
+        const expiredRecs = receivers.filter(r => {
+            if (!r.date) return false;
+            const pDate = new Date(r.date);
+            return (now - pDate) >= oneYearMs;
+        });
+
+        const recAlertList = document.getElementById('rec-alert-list');
+        if (expiredRecs.length > 0) {
+            recAlertList.innerHTML = expiredRecs.map(r => {
+                const expDate = new Date(new Date(r.date).getTime() + oneYearMs).toISOString().split('T')[0];
+                return `
+                    <div class="alert-item">
+                        <div>
+                            <b style="color:#fff;">${r.client}</b> | 
+                            <span style="color:var(--text-muted);">${r.phone}</span> | 
+                            <span style="color:var(--primary-color); font-weight:700;">${r.model}</span> | 
+                            <span style="color:var(--gold-glow);">تاريخ الانتهاء: ${expDate}</span>
+                        </div>
+                        <a href="https://wa.me/2${r.phone}?text=${encodeURIComponent('مرحباً ' + r.client + '، نود تذكيرك بمرور سنة على ريسيفر ' + r.model + ' وموعد تجديد الاشتراك.')}" target="_blank" class="btn-whatsapp">
+                            <i class="fab fa-whatsapp"></i> تذكير واتساب
+                        </a>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            recAlertList.innerHTML = `<div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد أجهزة مر عليها سنة حالياً.</div>`;
+        }
+
+        // 2. فحص السيرفرات (تنتهي غداً)
+        const expiringSrvs = [];
+        servers.forEach(s => {
+            if (!s.datetime) return;
+            const startDate = new Date(s.datetime.replace(' ', 'T'));
+            let months = 12;
+            if (s.duration === 'شهر واحد') months = 1;
+            else if (s.duration === '3 أشهر') months = 3;
+            else if (s.duration === '6 أشهر') months = 6;
+            else if (s.duration === 'سنة كاملة') months = 12;
+            else if (s.duration === 'سنتين') months = 24;
+
+            const expiryDate = new Date(startDate);
+            expiryDate.setMonth(expiryDate.getMonth() + months);
+
+            const diff = expiryDate.getTime() - now.getTime();
+            if (diff > 0 && diff <= (oneDayMs * 1.5)) {
+                expiringSrvs.push({
+                    ...s,
+                    expiryStr: expiryDate.toISOString().split('T')[0]
+                });
+            }
+        });
+
+        const srvAlertList = document.getElementById('srv-alert-list');
+        if (expiringSrvs.length > 0) {
+            srvAlertList.innerHTML = expiringSrvs.map(s => `
+                <div class="alert-item">
+                    <div>
+                        <b style="color:#fff;">${s.client}</b> | 
+                        <span style="color:var(--text-muted);">${s.phone}</span> | 
+                        <span style="color:var(--gold-glow); font-weight:700;">سيرفر: ${s.name} (${s.duration})</span> | 
+                        <span style="color:#ff5085;">ينتهي غداً بتاريخ: ${s.expiryStr}</span>
+                    </div>
+                    <a href="https://wa.me/2${s.phone}?text=${encodeURIComponent('مرحباً ' + s.client + '، نود تذكيرك بأن اشتراكك في سيرفر ' + s.name + ' ينتهي غداً بتاريخ ' + s.expiryStr + '، يرجى التواصل معنا للتجديد.')}" target="_blank" class="btn-whatsapp">
+                        <i class="fab fa-whatsapp"></i> تذكير واتساب
+                    </a>
+                </div>
+            `).join('');
+        } else {
+            srvAlertList.innerHTML = `<div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد اشتراكات تنتهي غداً حالياً.</div>`;
+        }
+    }
+
     function renderLocal() {
         const searchRecQuery = (document.getElementById('search-rec')?.value || '').toLowerCase().trim();
         const searchSrvQuery = (document.getElementById('search-srv')?.value || '').toLowerCase().trim();
 
-        // 1. Receivers Render (عرض المكسب كرقم عادي بدون علامة +)
+        // 1. Receivers Render
         const recContainer = document.getElementById('list-rec');
         const filteredReceivers = receivers.filter(r => 
             (r.client || '').toLowerCase().includes(searchRecQuery) ||
@@ -808,7 +978,7 @@
             `).join('');
         }
 
-        // 2. Servers Render (عرض المكسب كرقم عادي بدون علامة +)
+        // 2. Servers Render
         const srvContainer = document.getElementById('list-srv');
         const filteredServers = servers.filter(s => 
             (s.client || '').toLowerCase().includes(searchSrvQuery) ||
@@ -901,6 +1071,7 @@
         }
 
         calculateFinancials();
+        updateAlerts();
     }
 
     function calculateFinancials() {
