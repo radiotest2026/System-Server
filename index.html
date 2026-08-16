@@ -11,7 +11,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDW2M3wiV5dsJH5CS8XvcGvUaZpjHg6WHM",
@@ -27,7 +27,7 @@
         const db = getFirestore(app);
 
         window.db = db;
-        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot };
+        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc };
     </script>
 
     <style>
@@ -41,9 +41,11 @@
             --input-bg: #101018;
             --input-border: rgba(255, 255, 255, 0.15);
             --record-bg: #181826;
+            --finance-bg: rgba(20, 20, 30, 0.96);
             --green-glow: #00ff66;
             --gold-glow: #ffc107;
             --blue-glow: #38bdf8;
+            --inner-box: #101018;
         }
 
         * {
@@ -110,7 +112,10 @@
             align-self: flex-start;
         }
 
-        header { text-align: center; margin-bottom: 20px; }
+        header { 
+            text-align: center; 
+            margin-bottom: 20px; 
+        }
         header h1 {
             font-size: 1.8rem;
             font-weight: 900;
@@ -125,7 +130,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgba(24, 24, 38, 0.9);
+            background: var(--card-bg);
             border: 1px solid rgba(255, 0, 85, 0.4);
             color: var(--green-glow);
             padding: 5px 14px;
@@ -185,78 +190,98 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
 
-        /* صندوق التنبيهات الثابت */
+        /* صناديق التنبيه المصغرة والأنيقة */
         .alert-box {
-            border-radius: 14px;
-            padding: 16px 18px;
-            margin-bottom: 20px;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 15px;
             display: block;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .alert-box-rec {
-            background: rgba(255, 0, 85, 0.08);
-            border: 1px solid rgba(255, 0, 85, 0.4);
+            background: rgba(255, 0, 85, 0.05);
+            border: 1px solid rgba(255, 0, 85, 0.3);
         }
 
         .alert-box-srv {
-            background: rgba(255, 193, 7, 0.08);
-            border: 1px solid rgba(255, 193, 7, 0.4);
+            background: rgba(255, 193, 7, 0.05);
+            border: 1px solid rgba(255, 193, 7, 0.3);
         }
 
         .alert-title {
-            font-size: 1.05rem;
+            font-size: 0.88rem;
             font-weight: 800;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .alert-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .alert-item {
-            background: rgba(16, 16, 24, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            padding: 10px 14px;
+            background: var(--inner-box);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 8px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
+            font-size: 0.82rem;
+        }
+
+        .alert-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .alert-empty-text {
             color: var(--green-glow);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: 700;
-            padding: 5px 0;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .btn-whatsapp {
             background: #25d366;
             color: #fff;
             text-decoration: none;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 0.82rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.76rem;
             font-weight: 800;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            transition: opacity 0.2s;
+            gap: 5px;
         }
 
-        .btn-whatsapp:hover {
-            opacity: 0.9;
+        .btn-dismiss-alert {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            border: 1px solid var(--input-border);
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.76rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .btn-dismiss-alert:hover {
+            background: rgba(255, 0, 85, 0.2);
+            color: #fff;
+            border-color: var(--primary-color);
         }
 
         .section-header {
@@ -334,25 +359,16 @@
             gap: 12px;
             position: relative;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
-            transition: all 0.2s ease;
         }
 
         .receiver-card {
             border: 1px solid rgba(255, 0, 85, 0.35);
             border-right: 4px solid var(--primary-color);
         }
-        .receiver-card:hover {
-            border-color: var(--primary-color);
-            box-shadow: 0 8px 24px rgba(255, 0, 85, 0.15);
-        }
 
         .server-card {
             border: 1px solid rgba(0, 255, 102, 0.35);
             border-right: 4px solid var(--green-glow);
-        }
-        .server-card:hover {
-            border-color: var(--green-glow);
-            box-shadow: 0 8px 24px rgba(0, 255, 102, 0.15);
         }
 
         .record-header-row {
@@ -424,7 +440,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(20, 20, 30, 0.96);
+            background: var(--finance-bg);
             backdrop-filter: blur(12px);
             border-top: 1px solid rgba(255, 0, 85, 0.4);
             padding: 10px 15px;
@@ -521,13 +537,13 @@
     <!-- Section 1: Receivers -->
     <div id="panel-rec" class="tab-panel active">
         
-        <!-- صندوق تنبيهات الريسيفرات الثابت -->
+        <!-- صندوق تنبيهات الريسيفرات الخارجة من الضمان -->
         <div id="rec-alert-box" class="alert-box alert-box-rec">
             <div class="alert-title" style="color: var(--primary-color);">
-                <i class="fas fa-bell"></i> أجهزة مر عليها سنة كاملة (تحتاج متابعة وتجديد)
+                <i class="fas fa-shield-alt"></i> أجهزة مر عليها سنة (خارج الضمان)
             </div>
             <div id="rec-alert-list" class="alert-list">
-                <div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد أجهزة مر عليها سنة حالياً.</div>
+                <div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد أجهزة خارج الضمان حالياً.</div>
             </div>
         </div>
 
@@ -583,7 +599,7 @@
     <!-- Section 2: Servers -->
     <div id="panel-srv" class="tab-panel server-panel">
 
-        <!-- صندوق تنبيهات السيرفرات الثابت -->
+        <!-- صندوق تنبيهات السيرفرات -->
         <div id="srv-alert-box" class="alert-box alert-box-srv">
             <div class="alert-title" style="color: var(--gold-glow);">
                 <i class="fas fa-exclamation-triangle"></i> اشتراكات سيرفرات تنتهي غداً (أرسل تذكيراً للعميل)
@@ -683,7 +699,7 @@
             </div>
             <div class="stat-info">
                 <span class="stat-title">إجمالي تحصيل الوردية</span>
-                <span class="stat-value" id="stat-today-sales" style="color: #fff;">0 ج.م</span>
+                <span class="stat-value" id="stat-today-sales" style="color: var(--text-color);">0 ج.م</span>
             </div>
         </div>
 
@@ -803,6 +819,7 @@
             price: price,
             profit: price - cost,
             date: dateVal,
+            warrantyDismissed: false,
             createdAt: Date.now()
         };
 
@@ -834,6 +851,7 @@
             pass: authType === 'userpass' ? document.getElementById('srv-pass').value : '',
             host: authType === 'userpass' ? document.getElementById('srv-host').value : '',
             code: authType === 'code' ? document.getElementById('srv-code').value : '',
+            expiryDismissed: false,
             createdAt: Date.now()
         };
 
@@ -845,26 +863,47 @@
     }
 
     async function deleteRec(id) {
-        if (window.db) {
-            await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "receivers", id));
+        if (confirm("هل تريد حذف هذا الريسيفر نهائياً من السجل؟")) {
+            if (window.db) {
+                await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "receivers", id));
+            }
         }
     }
 
     async function deleteSrv(id) {
-        if (window.db) {
-            await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "servers", id));
+        if (confirm("هل تريد حذف هذا الاشتراك نهائياً من السجل؟")) {
+            if (window.db) {
+                await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "servers", id));
+            }
         }
     }
 
-    // فحص وتحديث صناديق التنبيهات
+    // إزالة الجهاز من صندوق تنبيهات الضمان
+    async function dismissWarrantyAlert(id) {
+        if (window.db) {
+            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "receivers", id), {
+                warrantyDismissed: true
+            });
+        }
+    }
+
+    // إزالة السيرفر من صندوق تنبيهات الانتهاء
+    async function dismissServerAlert(id) {
+        if (window.db) {
+            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "servers", id), {
+                expiryDismissed: true
+            });
+        }
+    }
+
     function updateAlerts() {
         const now = new Date();
         const oneYearMs = 365 * 24 * 60 * 60 * 1000;
         const oneDayMs = 24 * 60 * 60 * 1000;
 
-        // 1. فحص الريسيفرات (مر عليها سنة)
+        // 1. فحص الريسيفرات خارج الضمان
         const expiredRecs = receivers.filter(r => {
-            if (!r.date) return false;
+            if (!r.date || r.warrantyDismissed) return false;
             const pDate = new Date(r.date);
             return (now - pDate) >= oneYearMs;
         });
@@ -876,25 +915,30 @@
                 return `
                     <div class="alert-item">
                         <div>
-                            <b style="color:#fff;">${r.client}</b> | 
+                            <b>${r.client}</b> | 
                             <span style="color:var(--text-muted);">${r.phone}</span> | 
                             <span style="color:var(--primary-color); font-weight:700;">${r.model}</span> | 
-                            <span style="color:var(--gold-glow);">تاريخ الانتهاء: ${expDate}</span>
+                            <span style="color:var(--gold-glow);">انتهاء الضمان: ${expDate}</span>
                         </div>
-                        <a href="https://wa.me/2${r.phone}?text=${encodeURIComponent('مرحباً ' + r.client + '، نود تذكيرك بمرور سنة على ريسيفر ' + r.model + ' وموعد تجديد الاشتراك.')}" target="_blank" class="btn-whatsapp">
-                            <i class="fab fa-whatsapp"></i> تذكير واتساب
-                        </a>
+                        <div class="alert-actions">
+                            <a href="https://wa.me/2${r.phone}?text=${encodeURIComponent('مرحباً ' + r.client + '، نود إعلامك بمرور سنة على شراء ريسيفر ' + r.model + ' وانتهاء فترة الضمان الخاصة بالجهاز.')}" target="_blank" class="btn-whatsapp">
+                                <i class="fab fa-whatsapp"></i> تواصل
+                            </a>
+                            <button class="btn-dismiss-alert" onclick="dismissWarrantyAlert('${r.id}')" title="تمت المراجعة والتسجيل">
+                                <i class="fas fa-check"></i> إزالة من التنبيهات
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
         } else {
-            recAlertList.innerHTML = `<div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد أجهزة مر عليها سنة حالياً.</div>`;
+            recAlertList.innerHTML = `<div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد أجهزة خارج الضمان حالياً.</div>`;
         }
 
-        // 2. فحص السيرفرات (تنتهي غداً)
+        // 2. فحص السيرفرات التي تنتهي غداً
         const expiringSrvs = [];
         servers.forEach(s => {
-            if (!s.datetime) return;
+            if (!s.datetime || s.expiryDismissed) return;
             const startDate = new Date(s.datetime.replace(' ', 'T'));
             let months = 12;
             if (s.duration === 'شهر واحد') months = 1;
@@ -920,14 +964,19 @@
             srvAlertList.innerHTML = expiringSrvs.map(s => `
                 <div class="alert-item">
                     <div>
-                        <b style="color:#fff;">${s.client}</b> | 
+                        <b>${s.client}</b> | 
                         <span style="color:var(--text-muted);">${s.phone}</span> | 
                         <span style="color:var(--gold-glow); font-weight:700;">سيرفر: ${s.name} (${s.duration})</span> | 
-                        <span style="color:#ff5085;">ينتهي غداً بتاريخ: ${s.expiryStr}</span>
+                        <span style="color:#ff5085;">ينتهي غداً: ${s.expiryStr}</span>
                     </div>
-                    <a href="https://wa.me/2${s.phone}?text=${encodeURIComponent('مرحباً ' + s.client + '، نود تذكيرك بأن اشتراكك في سيرفر ' + s.name + ' ينتهي غداً بتاريخ ' + s.expiryStr + '، يرجى التواصل معنا للتجديد.')}" target="_blank" class="btn-whatsapp">
-                        <i class="fab fa-whatsapp"></i> تذكير واتساب
-                    </a>
+                    <div class="alert-actions">
+                        <a href="https://wa.me/2${s.phone}?text=${encodeURIComponent('مرحباً ' + s.client + '، نود تذكيرك بأن اشتراكك في سيرفر ' + s.name + ' ينتهي غداً بتاريخ ' + s.expiryStr + '، يرجى التواصل معنا للتجديد.')}" target="_blank" class="btn-whatsapp">
+                            <i class="fab fa-whatsapp"></i> تذكير واتساب
+                        </a>
+                        <button class="btn-dismiss-alert" onclick="dismissServerAlert('${s.id}')" title="تم التواصل والمراجعة">
+                            <i class="fas fa-check"></i> إزالة من التنبيهات
+                        </button>
+                    </div>
                 </div>
             `).join('');
         } else {
@@ -957,7 +1006,7 @@
                         <div class="card-meta-wrap">
                             <div class="info-group">
                                 <span class="info-label"><i class="fas fa-user"></i> اسم العميل</span>
-                                <span class="info-value" style="font-size: 1rem; color: #fff;">${r.client}</span>
+                                <span class="info-value" style="font-size: 1rem;">${r.client}</span>
                             </div>
                             <div class="info-group">
                                 <span class="info-label"><i class="fas fa-phone-alt"></i> رقم الهاتف</span>
@@ -1031,7 +1080,7 @@
                             <div class="card-meta-wrap">
                                 <div class="info-group">
                                     <span class="info-label"><i class="fas fa-user"></i> اسم العميل</span>
-                                    <span class="info-value" style="font-size: 1rem; color: #fff;">${s.client || 'غير محدد'}</span>
+                                    <span class="info-value" style="font-size: 1rem;">${s.client || 'غير محدد'}</span>
                                 </div>
                                 <div class="info-group">
                                     <span class="info-label"><i class="fas fa-phone-alt"></i> رقم الهاتف</span>
@@ -1054,7 +1103,7 @@
                             </div>
                             <div class="info-group">
                                 <span class="info-label"><i class="fas fa-money-bill-wave"></i> سعر البيع</span>
-                                <span class="info-value" style="color: #fff;">${s.price} ج.م</span>
+                                <span class="info-value">${s.price} ج.م</span>
                             </div>
                             <div class="info-group">
                                 <span class="info-label"><i class="fas fa-chart-line"></i> صافي المكسب</span>
