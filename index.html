@@ -190,7 +190,6 @@
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
 
-        /* صناديق التنبيه المصغرة والأنيقة */
         .alert-box {
             border-radius: 10px;
             padding: 10px 14px;
@@ -388,6 +387,12 @@
             flex-wrap: wrap;
         }
 
+        .card-actions-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .record-grid-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -418,11 +423,27 @@
         .server-card .info-label i { color: var(--green-glow); }
         .info-value { font-size: 0.88rem; font-weight: 800; color: var(--text-color); word-break: break-word; }
 
+        .btn-edit {
+            background: rgba(56, 189, 248, 0.15); 
+            color: var(--blue-glow); 
+            border: 1px solid rgba(56, 189, 248, 0.4); 
+            padding: 6px 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 0.8rem; 
+            font-weight: 800; 
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-edit:hover { background: var(--blue-glow); color: #000; }
+
         .btn-del { 
             background: rgba(255, 0, 85, 0.15); 
             color: var(--primary-color); 
             border: 1px solid rgba(255, 0, 85, 0.4); 
-            padding: 6px 14px; 
+            padding: 6px 12px; 
             border-radius: 8px; 
             cursor: pointer; 
             font-size: 0.8rem; 
@@ -434,6 +455,52 @@
         }
         .btn-del:hover { background: var(--primary-color); color: white; }
         .no-data { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.88rem; }
+
+        /* نافذة التعديل المودال (Edit Modal) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            padding: 22px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--input-border);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: var(--primary-color); }
 
         .finance-bar {
             position: fixed;
@@ -731,6 +798,79 @@
     </div>
 </div>
 
+<!-- Modal تعديل الريسيفر -->
+<div id="edit-rec-modal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 style="color: var(--primary-color);"><i class="fas fa-edit"></i> تعديل بيانات الريسيفر</h3>
+            <button class="modal-close" onclick="closeEditModal('rec')">&times;</button>
+        </div>
+        <form id="edit-rec-form" onsubmit="saveEditReceiver(event)">
+            <input type="hidden" id="edit-rec-id">
+            <div class="form-grid">
+                <div class="field"><label>اسم العميل</label><input type="text" id="edit-rec-client" required></div>
+                <div class="field"><label>رقم التليفون</label><input type="tel" id="edit-rec-phone" required></div>
+                <div class="field"><label>العنوان</label><input type="text" id="edit-rec-address" required></div>
+                <div class="field"><label>نوع الريسيفر</label><input type="text" id="edit-rec-model" required></div>
+                <div class="field"><label>سعر التكلفة (ج.م)</label><input type="number" id="edit-rec-cost" step="0.01" required></div>
+                <div class="field"><label>سعر البيع (ج.م)</label><input type="number" id="edit-rec-price" step="0.01" required></div>
+                <div class="field"><label>تاريخ الشراء</label><input type="date" id="edit-rec-date" required></div>
+            </div>
+            <button type="submit" class="btn-action btn-pink" style="margin-top: 16px;">حفظ التعديلات</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal تعديل السيرفر -->
+<div id="edit-srv-modal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 style="color: var(--green-glow);"><i class="fas fa-edit"></i> تعديل بيانات السيرفر</h3>
+            <button class="modal-close" onclick="closeEditModal('srv')">&times;</button>
+        </div>
+        <form id="edit-srv-form" onsubmit="saveEditServer(event)">
+            <input type="hidden" id="edit-srv-id">
+            <div class="form-grid">
+                <div class="field"><label>اسم العميل</label><input type="text" id="edit-srv-client" required></div>
+                <div class="field"><label>رقم التليفون</label><input type="tel" id="edit-srv-phone" required></div>
+                <div class="field"><label>اسم السيرفر</label><input type="text" id="edit-srv-name" required></div>
+                <div class="field"><label>سعر التكلفة (ج.م)</label><input type="number" id="edit-srv-cost" step="0.01" required></div>
+                <div class="field"><label>سعر البيع (ج.م)</label><input type="number" id="edit-srv-price" step="0.01" required></div>
+                <div class="field"><label>تاريخ ووقت الشراء</label><input type="datetime-local" id="edit-srv-datetime" required></div>
+                <div class="field">
+                    <label>مدة الاشتراك</label>
+                    <select id="edit-srv-duration" required>
+                        <option value="شهر واحد">شهر واحد</option>
+                        <option value="3 أشهر">3 أشهر</option>
+                        <option value="6 أشهر">6 أشهر</option>
+                        <option value="سنة كاملة">سنة كاملة</option>
+                        <option value="سنتين">سنتين</option>
+                    </select>
+                </div>
+
+                <div class="auth-box">
+                    <div class="auth-options">
+                        <label><input type="radio" name="edit_auth_type" value="userpass" id="edit-auth-userpass" onclick="toggleEditAuth()"> يوزر وباسورد وهوســت</label>
+                        <label><input type="radio" name="edit_auth_type" value="code" id="edit-auth-code" onclick="toggleEditAuth()"> كود تفعيل مباشر فقط</label>
+                    </div>
+
+                    <div id="edit-auth-userpass-fields" class="form-grid">
+                        <div class="field"><label>يوزر (Username)</label><input type="text" id="edit-srv-user"></div>
+                        <div class="field"><label>باسورد (Password)</label><input type="text" id="edit-srv-pass"></div>
+                        <div class="field"><label>هوست (Host / URL)</label><input type="text" id="edit-srv-host"></div>
+                    </div>
+
+                    <div id="edit-auth-code-fields" class="field" style="display: none;">
+                        <label>كود الاشتراك (Activation Code)</label>
+                        <input type="text" id="edit-srv-code">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn-action btn-green" style="margin-top: 16px;">حفظ التعديلات</button>
+        </form>
+    </div>
+</div>
+
 <script>
     const ADMIN_PASSWORD = "108"; 
     let currentShiftStartTime = parseInt(localStorage.getItem('marvel_shift_start_time')) || Date.now();
@@ -804,6 +944,12 @@
         document.getElementById('auth-code-fields').style.display = authType === 'code' ? 'flex' : 'none';
     }
 
+    function toggleEditAuth() {
+        const authType = document.querySelector('input[name="edit_auth_type"]:checked').value;
+        document.getElementById('edit-auth-userpass-fields').style.display = authType === 'userpass' ? 'grid' : 'none';
+        document.getElementById('edit-auth-code-fields').style.display = authType === 'code' ? 'flex' : 'none';
+    }
+
     async function addReceiver(e) {
         e.preventDefault();
         const cost = parseFloat(document.getElementById('rec-cost').value) || 0;
@@ -863,7 +1009,7 @@
     }
 
     async function deleteRec(id) {
-        if (confirm("هل تريد حذف هذا الريسيفر نهائياً من السجل؟")) {
+        if (confirm("⚠️ هل أنت متأكد من حذف هذا الأوردر نهائياً؟")) {
             if (window.db) {
                 await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "receivers", id));
             }
@@ -871,14 +1017,119 @@
     }
 
     async function deleteSrv(id) {
-        if (confirm("هل تريد حذف هذا الاشتراك نهائياً من السجل؟")) {
+        if (confirm("⚠️ هل أنت متأكد من حذف هذا الاشتراك نهائياً؟")) {
             if (window.db) {
                 await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "servers", id));
             }
         }
     }
 
-    // إزالة الجهاز من صندوق تنبيهات الضمان
+    // دوال تعديل الريسيفر
+    function openEditRec(id) {
+        const item = receivers.find(r => r.id === id);
+        if (!item) return;
+
+        document.getElementById('edit-rec-id').value = item.id;
+        document.getElementById('edit-rec-client').value = item.client || '';
+        document.getElementById('edit-rec-phone').value = item.phone || '';
+        document.getElementById('edit-rec-address').value = item.address || '';
+        document.getElementById('edit-rec-model').value = item.model || '';
+        document.getElementById('edit-rec-cost').value = item.cost || 0;
+        document.getElementById('edit-rec-price').value = item.price || 0;
+        document.getElementById('edit-rec-date').value = item.date || '';
+
+        document.getElementById('edit-rec-modal').style.display = 'flex';
+    }
+
+    async function saveEditReceiver(e) {
+        e.preventDefault();
+        const id = document.getElementById('edit-rec-id').value;
+        const cost = parseFloat(document.getElementById('edit-rec-cost').value) || 0;
+        const price = parseFloat(document.getElementById('edit-rec-price').value) || 0;
+
+        const updatedData = {
+            client: document.getElementById('edit-rec-client').value,
+            phone: document.getElementById('edit-rec-phone').value,
+            address: document.getElementById('edit-rec-address').value,
+            model: document.getElementById('edit-rec-model').value,
+            cost: cost,
+            price: price,
+            profit: price - cost,
+            date: document.getElementById('edit-rec-date').value
+        };
+
+        if (window.db) {
+            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "receivers", id), updatedData);
+        }
+        closeEditModal('rec');
+    }
+
+    // دوال تعديل السيرفر
+    function openEditSrv(id) {
+        const item = servers.find(s => s.id === id);
+        if (!item) return;
+
+        document.getElementById('edit-srv-id').value = item.id;
+        document.getElementById('edit-srv-client').value = item.client || '';
+        document.getElementById('edit-srv-phone').value = item.phone || '';
+        document.getElementById('edit-srv-name').value = item.name || '';
+        document.getElementById('edit-srv-cost').value = item.cost || 0;
+        document.getElementById('edit-srv-price').value = item.price || 0;
+        
+        let dt = item.datetime || '';
+        if (dt.includes(' ')) dt = dt.replace(' ', 'T');
+        document.getElementById('edit-srv-datetime').value = dt;
+        document.getElementById('edit-srv-duration').value = item.duration || 'سنة كاملة';
+
+        if (item.authType === 'code') {
+            document.getElementById('edit-auth-code').checked = true;
+        } else {
+            document.getElementById('edit-auth-userpass').checked = true;
+        }
+
+        document.getElementById('edit-srv-user').value = item.user || '';
+        document.getElementById('edit-srv-pass').value = item.pass || '';
+        document.getElementById('edit-srv-host').value = item.host || '';
+        document.getElementById('edit-srv-code').value = item.code || '';
+
+        toggleEditAuth();
+        document.getElementById('edit-srv-modal').style.display = 'flex';
+    }
+
+    async function saveEditServer(e) {
+        e.preventDefault();
+        const id = document.getElementById('edit-srv-id').value;
+        const authType = document.querySelector('input[name="edit_auth_type"]:checked').value;
+        const rawDt = document.getElementById('edit-srv-datetime').value;
+        const cost = parseFloat(document.getElementById('edit-srv-cost').value) || 0;
+        const price = parseFloat(document.getElementById('edit-srv-price').value) || 0;
+
+        const updatedData = {
+            client: document.getElementById('edit-srv-client').value,
+            phone: document.getElementById('edit-srv-phone').value,
+            name: document.getElementById('edit-srv-name').value,
+            cost: cost,
+            price: price,
+            profit: price - cost,
+            datetime: rawDt ? rawDt.replace('T', ' ') : '',
+            duration: document.getElementById('edit-srv-duration').value,
+            authType: authType,
+            user: authType === 'userpass' ? document.getElementById('edit-srv-user').value : '',
+            pass: authType === 'userpass' ? document.getElementById('edit-srv-pass').value : '',
+            host: authType === 'userpass' ? document.getElementById('edit-srv-host').value : '',
+            code: authType === 'code' ? document.getElementById('edit-srv-code').value : ''
+        };
+
+        if (window.db) {
+            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "servers", id), updatedData);
+        }
+        closeEditModal('srv');
+    }
+
+    function closeEditModal(type) {
+        document.getElementById(type === 'rec' ? 'edit-rec-modal' : 'edit-srv-modal').style.display = 'none';
+    }
+
     async function dismissWarrantyAlert(id) {
         if (window.db) {
             await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "receivers", id), {
@@ -887,7 +1138,6 @@
         }
     }
 
-    // إزالة السيرفر من صندوق تنبيهات الانتهاء
     async function dismissServerAlert(id) {
         if (window.db) {
             await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "servers", id), {
@@ -1013,7 +1263,10 @@
                                 <span class="info-value" style="direction: ltr; text-align: right;">${r.phone}</span>
                             </div>
                         </div>
-                        <button class="btn-del" onclick="deleteRec('${r.id}')"><i class="fas fa-trash"></i> حذف</button>
+                        <div class="card-actions-wrap">
+                            <button class="btn-edit" onclick="openEditRec('${r.id}')"><i class="fas fa-edit"></i> تعديل</button>
+                            <button class="btn-del" onclick="deleteRec('${r.id}')"><i class="fas fa-trash"></i> حذف</button>
+                        </div>
                     </div>
 
                     <div class="record-grid-row">
@@ -1091,7 +1344,10 @@
                                     <span class="info-value" style="color: var(--gold-glow);">${s.name}</span>
                                 </div>
                             </div>
-                            <button class="btn-del" onclick="deleteSrv('${s.id}')"><i class="fas fa-trash"></i> حذف</button>
+                            <div class="card-actions-wrap">
+                                <button class="btn-edit" onclick="openEditSrv('${s.id}')"><i class="fas fa-edit"></i> تعديل</button>
+                                <button class="btn-del" onclick="deleteSrv('${s.id}')"><i class="fas fa-trash"></i> حذف</button>
+                            </div>
                         </div>
 
                         ${credentialsHtml}
