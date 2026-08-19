@@ -11,7 +11,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDW2M3wiV5dsJH5CS8XvcGvUaZpjHg6WHM",
@@ -27,7 +27,7 @@
         const db = getFirestore(app);
 
         window.db = db;
-        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, setDoc, getDoc, getDocs };
+        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, setDoc, getDoc };
     </script>
 
     <style>
@@ -175,25 +175,6 @@
             font-weight: 700;
             color: var(--blue-glow);
         }
-
-        .header-btn-wrap {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-filter-legacy {
-            background: rgba(255, 193, 7, 0.15);
-            border: 1px solid rgba(255, 193, 7, 0.35);
-            color: var(--gold-glow);
-            padding: 5px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.76rem;
-            font-weight: 800;
-            transition: all 0.2s;
-        }
-        .btn-filter-legacy:hover { background: var(--gold-glow); color: #000; }
 
         .btn-logout {
             background: rgba(255, 0, 85, 0.15);
@@ -581,36 +562,6 @@
         }
         .modal-close:hover { color: var(--primary-color); }
 
-        .legacy-list-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .legacy-item {
-            background: var(--inner-box);
-            border: 1px solid var(--input-border);
-            border-radius: 10px;
-            padding: 12px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn-claim {
-            background: linear-gradient(135deg, #00b843, #008f33);
-            color: #fff;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 800;
-            font-size: 0.8rem;
-        }
-
         .finance-bar {
             position: fixed;
             bottom: 0;
@@ -678,7 +629,7 @@
 </head>
 <body>
 
-<!-- 1. شاشة الدخول والتسجيل السحابية المحدثة -->
+<!-- 1. شاشة الدخول والتسجيل -->
 <div id="login-view" class="login-wrapper">
     <div class="login-card">
         <div class="login-icon"><i class="fas fa-user-shield"></i></div>
@@ -714,10 +665,7 @@
         <div class="header-top-bar">
             <div class="user-badge"><i class="fas fa-user-circle"></i> الحساب: <span id="current-user-name"></span></div>
             <div class="live-clock-badge"><i class="fas fa-clock"></i> <span id="realtime-clock">--/--/---- --:--:-- --</span></div>
-            <div class="header-btn-wrap">
-                <button class="btn-filter-legacy" onclick="openLegacyModal()"><i class="fas fa-tasks"></i> فرز الأوردرات القديمة المشتركة</button>
-                <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
-            </div>
+            <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
         </div>
         <h1>حسابات الشغل</h1>
         <p>لوحة التحكم بالريسيفرات واشتراكات السيرفرات والأرباح</p>
@@ -996,29 +944,12 @@
     </div>
 </div>
 
-<!-- Modal فرز الأوردرات القديمة -->
-<div id="legacy-modal" class="modal-overlay">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3 style="color: var(--gold-glow);"><i class="fas fa-tasks"></i> فرز الأوردرات المشتركة القديمة</h3>
-            <button class="modal-close" onclick="closeLegacyModal()">&times;</button>
-        </div>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
-            اختر الأوردرات الخاصة بك واضغط <b>«ضم لحسابي»</b> ليتم نقلها فوراً إلى حسابك المعزول وحذفها من القائمة المشتركة لمنع التداخل مع باقي الزملاء.
-        </p>
-        <div id="legacy-items-list" class="legacy-list-wrapper">
-            <div style="text-align:center; padding:15px; color:var(--text-muted);">جاري تحميل الأوردرات القديمة...</div>
-        </div>
-    </div>
-</div>
-
 <script>
     let authMode = 'login';
     let currentUser = localStorage.getItem('marvel_active_user') || null;
     let currentShiftStartTime = 0;
     let unsubs = [];
 
-    // تحويل أي نص (عربي أو إنجليزي) إلى مفتاح آمن لقاعدة البيانات
     function sanitizeUserKey(username) {
         return encodeURIComponent(username.trim().toLowerCase());
     }
@@ -1087,7 +1018,6 @@
 
             } else {
                 if (!userSnap.exists()) {
-                    // إذا كان الحساب غير مسجل، يتم إنشاؤه تلقائياً
                     await window.firestoreTools.setDoc(userDocRef, {
                         displayName: rawUsername,
                         password: password,
@@ -1127,87 +1057,6 @@
         localStorage.removeItem('marvel_active_user');
         unsubs.forEach(unsub => unsub && unsub());
         location.reload();
-    }
-
-    async function openLegacyModal() {
-        document.getElementById('legacy-modal').style.display = 'flex';
-        loadLegacyItems();
-    }
-
-    function closeLegacyModal() {
-        document.getElementById('legacy-modal').style.display = 'none';
-    }
-
-    async function loadLegacyItems() {
-        const container = document.getElementById('legacy-items-list');
-        container.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-muted);">جاري فحص الأوردرات القديمة...</div>';
-
-        if (!window.db) return;
-
-        try {
-            const legacyRecSnap = await window.firestoreTools.getDocs(window.firestoreTools.collection(window.db, "receivers"));
-            const legacySrvSnap = await window.firestoreTools.getDocs(window.firestoreTools.collection(window.db, "servers"));
-
-            let html = '';
-
-            legacyRecSnap.forEach(docSnap => {
-                const data = docSnap.data();
-                html += `
-                    <div class="legacy-item">
-                        <div>
-                            <span style="color:var(--primary-color); font-weight:800;">[ريسيفر]</span>
-                            <b>${data.client || 'عميل'}</b> | ${data.phone || ''} | ${data.model || ''} (${data.price || 0} ج.م)
-                        </div>
-                        <button class="btn-claim" onclick="claimLegacyItem('rec', '${docSnap.id}')">ضم لحسابي 📥</button>
-                    </div>
-                `;
-            });
-
-            legacySrvSnap.forEach(docSnap => {
-                const data = docSnap.data();
-                html += `
-                    <div class="legacy-item">
-                        <div>
-                            <span style="color:var(--green-glow); font-weight:800;">[سيرفر]</span>
-                            <b>${data.client || 'عميل'}</b> | ${data.phone || ''} | سيرفر: ${data.name || ''} (${data.price || 0} ج.م)
-                        </div>
-                        <button class="btn-claim" onclick="claimLegacyItem('srv', '${docSnap.id}')">ضم لحسابي 📥</button>
-                    </div>
-                `;
-            });
-
-            if (!html) {
-                container.innerHTML = '<div style="text-align:center; padding:15px; color:var(--green-glow); font-weight:700;"><i class="fas fa-check-circle"></i> تم فرز ونقل جميع الأوردرات القديمة بالكامل!</div>';
-            } else {
-                container.innerHTML = html;
-            }
-
-        } catch (err) {
-            console.error(err);
-            container.innerHTML = '<div style="text-align:center; padding:15px; color:#ff3366;">حدث خطأ أثناء جلب البيانات القديمة.</div>';
-        }
-    }
-
-    async function claimLegacyItem(type, legacyId) {
-        if (!window.db || !currentUser) return;
-
-        const userKey = sanitizeUserKey(currentUser);
-        const sourceColl = type === 'rec' ? 'receivers' : 'servers';
-        const targetColl = type === 'rec' ? `usr_${userKey}_receivers` : `usr_${userKey}_servers`;
-
-        try {
-            const docRef = window.firestoreTools.doc(window.db, sourceColl, legacyId);
-            const docSnap = await window.firestoreTools.getDoc(docRef);
-
-            if (docSnap.exists()) {
-                await window.firestoreTools.addDoc(window.firestoreTools.collection(window.db, targetColl), docSnap.data());
-                await window.firestoreTools.deleteDoc(docRef);
-                loadLegacyItems();
-            }
-        } catch (err) {
-            console.error(err);
-            alert("حدث خطأ أثناء نقل الأوردر.");
-        }
     }
 
     function updateClockAndInputs() {
