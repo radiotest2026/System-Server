@@ -11,7 +11,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDW2M3wiV5dsJH5CS8XvcGvUaZpjHg6WHM",
@@ -27,7 +27,7 @@
         const db = getFirestore(app);
 
         window.db = db;
-        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc };
+        window.firestoreTools = { collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, setDoc, getDoc, getDocs };
     </script>
 
     <style>
@@ -67,7 +67,7 @@
 
         .login-wrapper {
             width: 100%;
-            max-width: 380px;
+            max-width: 400px;
         }
 
         .login-card {
@@ -102,8 +102,38 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .login-card p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 18px; }
+        .login-card p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px; }
+
+        .auth-switch {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 18px;
+            background: var(--input-bg);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid var(--input-border);
+        }
+
+        .auth-switch-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auth-switch-btn.active {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
         .login-error { color: #ff3366; font-size: 0.82rem; margin-top: 8px; display: none; font-weight: 700; }
+        .login-success { color: var(--green-glow); font-size: 0.82rem; margin-top: 8px; display: none; font-weight: 700; }
 
         .app-container {
             width: 100%;
@@ -113,6 +143,7 @@
         }
 
         header { 
+            position: relative;
             text-align: center; 
             margin-bottom: 20px; 
         }
@@ -126,6 +157,55 @@
         }
         header p { color: var(--text-muted); font-size: 0.88rem; }
 
+        .header-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--input-border);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--blue-glow);
+        }
+
+        .header-btn-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-filter-legacy {
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.35);
+            color: var(--gold-glow);
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.76rem;
+            font-weight: 800;
+            transition: all 0.2s;
+        }
+        .btn-filter-legacy:hover { background: var(--gold-glow); color: #000; }
+
+        .btn-logout {
+            background: rgba(255, 0, 85, 0.15);
+            border: 1px solid rgba(255, 0, 85, 0.3);
+            color: var(--primary-color);
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+
         .live-clock-badge {
             display: inline-flex;
             align-items: center;
@@ -137,7 +217,6 @@
             border-radius: 20px;
             font-size: 0.82rem;
             font-weight: 800;
-            margin-top: 10px;
             direction: ltr;
         }
 
@@ -456,7 +535,7 @@
         .btn-del:hover { background: var(--primary-color); color: white; }
         .no-data { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.88rem; }
 
-        /* نافذة التعديل المودال (Edit Modal) */
+        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -477,7 +556,7 @@
             border: 1px solid var(--input-border);
             border-radius: 16px;
             width: 100%;
-            max-width: 600px;
+            max-width: 650px;
             padding: 22px;
             max-height: 90vh;
             overflow-y: auto;
@@ -501,6 +580,36 @@
             cursor: pointer;
         }
         .modal-close:hover { color: var(--primary-color); }
+
+        .legacy-list-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .legacy-item {
+            background: var(--inner-box);
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-claim {
+            background: linear-gradient(135deg, #00b843, #008f33);
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 0.8rem;
+        }
 
         .finance-bar {
             position: fixed;
@@ -569,19 +678,32 @@
 </head>
 <body>
 
-<!-- 1. شاشة الدخول -->
+<!-- 1. شاشة الدخول والتسجيل السحابية المحدثة -->
 <div id="login-view" class="login-wrapper">
     <div class="login-card">
-        <div class="login-icon"><i class="fas fa-lock"></i></div>
+        <div class="login-icon"><i class="fas fa-user-shield"></i></div>
         <h2>حسابات الشغل</h2>
-        <p>أدخل كلمة السر الخاصة بلوحة التحكم</p>
-        <form onsubmit="handleLogin(event)">
-            <div class="field" style="text-align: right;">
-                <label><i class="fas fa-key"></i> كلمة السر</label>
-                <input type="password" id="admin-pass-input" placeholder="أدخل كلمة السر...">
+        <p>نظام سحابي معزول لكل مستخدم</p>
+
+        <div class="auth-switch">
+            <button type="button" class="auth-switch-btn active" id="tab-login" onclick="switchAuthMode('login')">تسجيل دخول</button>
+            <button type="button" class="auth-switch-btn" id="tab-register" onclick="switchAuthMode('register')">مستخدم جديد</button>
+        </div>
+
+        <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+            <div class="field" style="text-align: right; margin-bottom: 10px;">
+                <label><i class="fas fa-user"></i> اسم المستخدم / كود الحساب</label>
+                <input type="text" id="auth-username" placeholder="اكتب اسم الحساب (عربي أو إنجليزي)..." required autocomplete="username">
             </div>
-            <div id="login-error-msg" class="login-error">كلمة السر غير صحيحة!</div>
-            <button type="submit" class="btn-action btn-pink">دخول اللوحة</button>
+            <div class="field" style="text-align: right; margin-bottom: 6px;">
+                <label><i class="fas fa-key"></i> كلمة المرور</label>
+                <input type="password" id="auth-password" placeholder="أدخل كلمة المرور..." required autocomplete="current-password">
+            </div>
+            
+            <div id="auth-error-msg" class="login-error"></div>
+            <div id="auth-success-msg" class="login-success"></div>
+
+            <button type="submit" id="auth-submit-btn" class="btn-action btn-pink">دخول اللوحة</button>
         </form>
     </div>
 </div>
@@ -589,11 +711,16 @@
 <!-- 2. الواجهة الرئيسية -->
 <div id="dashboard-view" class="app-container">
     <header>
+        <div class="header-top-bar">
+            <div class="user-badge"><i class="fas fa-user-circle"></i> الحساب: <span id="current-user-name"></span></div>
+            <div class="live-clock-badge"><i class="fas fa-clock"></i> <span id="realtime-clock">--/--/---- --:--:-- --</span></div>
+            <div class="header-btn-wrap">
+                <button class="btn-filter-legacy" onclick="openLegacyModal()"><i class="fas fa-tasks"></i> فرز الأوردرات القديمة المشتركة</button>
+                <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+            </div>
+        </div>
         <h1>حسابات الشغل</h1>
         <p>لوحة التحكم بالريسيفرات واشتراكات السيرفرات والأرباح</p>
-        <div class="live-clock-badge">
-            <i class="fas fa-clock"></i> <span id="realtime-clock">--/--/---- --:--:-- --</span>
-        </div>
     </header>
 
     <div class="tab-menu">
@@ -604,7 +731,6 @@
     <!-- Section 1: Receivers -->
     <div id="panel-rec" class="tab-panel active">
         
-        <!-- صندوق تنبيهات الريسيفرات الخارجة من الضمان -->
         <div id="rec-alert-box" class="alert-box alert-box-rec">
             <div class="alert-title" style="color: var(--primary-color);">
                 <i class="fas fa-shield-alt"></i> أجهزة مر عليها سنة (خارج الضمان)
@@ -666,7 +792,6 @@
     <!-- Section 2: Servers -->
     <div id="panel-srv" class="tab-panel server-panel">
 
-        <!-- صندوق تنبيهات السيرفرات -->
         <div id="srv-alert-box" class="alert-box alert-box-srv">
             <div class="alert-title" style="color: var(--gold-glow);">
                 <i class="fas fa-exclamation-triangle"></i> اشتراكات سيرفرات تنتهي غداً (أرسل تذكيراً للعميل)
@@ -871,19 +996,217 @@
     </div>
 </div>
 
-<script>
-    const ADMIN_PASSWORD = "108"; 
-    let currentShiftStartTime = parseInt(localStorage.getItem('marvel_shift_start_time')) || Date.now();
+<!-- Modal فرز الأوردرات القديمة -->
+<div id="legacy-modal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 style="color: var(--gold-glow);"><i class="fas fa-tasks"></i> فرز الأوردرات المشتركة القديمة</h3>
+            <button class="modal-close" onclick="closeLegacyModal()">&times;</button>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">
+            اختر الأوردرات الخاصة بك واضغط <b>«ضم لحسابي»</b> ليتم نقلها فوراً إلى حسابك المعزول وحذفها من القائمة المشتركة لمنع التداخل مع باقي الزملاء.
+        </p>
+        <div id="legacy-items-list" class="legacy-list-wrapper">
+            <div style="text-align:center; padding:15px; color:var(--text-muted);">جاري تحميل الأوردرات القديمة...</div>
+        </div>
+    </div>
+</div>
 
-    function handleLogin(e) {
+<script>
+    let authMode = 'login';
+    let currentUser = localStorage.getItem('marvel_active_user') || null;
+    let currentShiftStartTime = 0;
+    let unsubs = [];
+
+    // تحويل أي نص (عربي أو إنجليزي) إلى مفتاح آمن لقاعدة البيانات
+    function sanitizeUserKey(username) {
+        return encodeURIComponent(username.trim().toLowerCase());
+    }
+
+    function switchAuthMode(mode) {
+        authMode = mode;
+        document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+        document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+        document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'دخول اللوحة' : 'إنشاء حساب ودخول';
+        document.getElementById('auth-error-msg').style.display = 'none';
+        document.getElementById('auth-success-msg').style.display = 'none';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (currentUser) {
+            showDashboard(currentUser);
+        }
+    });
+
+    async function handleAuthSubmit(e) {
         e.preventDefault();
-        if (document.getElementById('admin-pass-input').value === ADMIN_PASSWORD) {
-            document.getElementById('login-view').style.display = 'none';
-            document.getElementById('dashboard-view').style.display = 'block';
-            document.body.style.alignItems = 'flex-start';
-            initFirebaseRealtimeSync();
-        } else {
-            document.getElementById('login-error-msg').style.display = 'block';
+        const rawUsername = document.getElementById('auth-username').value.trim();
+        const password = document.getElementById('auth-password').value.trim();
+        const errorElem = document.getElementById('auth-error-msg');
+        const successElem = document.getElementById('auth-success-msg');
+
+        errorElem.style.display = 'none';
+        successElem.style.display = 'none';
+
+        if (!rawUsername || !password) {
+            errorElem.textContent = 'يرجى كتابة اسم المستخدم وكلمة المرور';
+            errorElem.style.display = 'block';
+            return;
+        }
+
+        if (!window.db) {
+            errorElem.textContent = 'جاري الاتصال بقاعدة البيانات... يرجى المحاولة بعد ثوانٍ';
+            errorElem.style.display = 'block';
+            return;
+        }
+
+        const userKey = sanitizeUserKey(rawUsername);
+        const userDocRef = window.firestoreTools.doc(window.db, "system_users", userKey);
+
+        try {
+            const userSnap = await window.firestoreTools.getDoc(userDocRef);
+
+            if (authMode === 'register') {
+                if (userSnap.exists()) {
+                    errorElem.textContent = 'اسم المستخدم هذا مسجل بالفعل! يمكنك تسجيل الدخول به مباشرة.';
+                    errorElem.style.display = 'block';
+                    return;
+                }
+
+                await window.firestoreTools.setDoc(userDocRef, {
+                    displayName: rawUsername,
+                    password: password,
+                    createdAt: Date.now()
+                });
+
+                currentUser = rawUsername;
+                localStorage.setItem('marvel_active_user', currentUser);
+                successElem.textContent = 'تم إنشاء الحساب بنجاح! جاري الدخول...';
+                successElem.style.display = 'block';
+                setTimeout(() => showDashboard(currentUser), 400);
+
+            } else {
+                if (!userSnap.exists()) {
+                    // إذا كان الحساب غير مسجل، يتم إنشاؤه تلقائياً
+                    await window.firestoreTools.setDoc(userDocRef, {
+                        displayName: rawUsername,
+                        password: password,
+                        createdAt: Date.now()
+                    });
+                } else {
+                    const userData = userSnap.data();
+                    if (userData.password !== password) {
+                        errorElem.textContent = 'كلمة المرور غير صحيحة لهذا الحساب!';
+                        errorElem.style.display = 'block';
+                        return;
+                    }
+                }
+
+                currentUser = rawUsername;
+                localStorage.setItem('marvel_active_user', currentUser);
+                showDashboard(currentUser);
+            }
+        } catch (err) {
+            console.error(err);
+            errorElem.textContent = 'حدث خطأ أثناء الاتصال بقاعدة البيانات، تأكد من الإنترنت.';
+            errorElem.style.display = 'block';
+        }
+    }
+
+    function showDashboard(user) {
+        document.getElementById('login-view').style.display = 'none';
+        document.getElementById('dashboard-view').style.display = 'block';
+        document.body.style.alignItems = 'flex-start';
+        document.getElementById('current-user-name').textContent = user;
+        const userKey = sanitizeUserKey(user);
+        currentShiftStartTime = parseInt(localStorage.getItem('marvel_shift_' + userKey)) || Date.now();
+        initFirebaseRealtimeSync();
+    }
+
+    function handleLogout() {
+        localStorage.removeItem('marvel_active_user');
+        unsubs.forEach(unsub => unsub && unsub());
+        location.reload();
+    }
+
+    async function openLegacyModal() {
+        document.getElementById('legacy-modal').style.display = 'flex';
+        loadLegacyItems();
+    }
+
+    function closeLegacyModal() {
+        document.getElementById('legacy-modal').style.display = 'none';
+    }
+
+    async function loadLegacyItems() {
+        const container = document.getElementById('legacy-items-list');
+        container.innerHTML = '<div style="text-align:center; padding:15px; color:var(--text-muted);">جاري فحص الأوردرات القديمة...</div>';
+
+        if (!window.db) return;
+
+        try {
+            const legacyRecSnap = await window.firestoreTools.getDocs(window.firestoreTools.collection(window.db, "receivers"));
+            const legacySrvSnap = await window.firestoreTools.getDocs(window.firestoreTools.collection(window.db, "servers"));
+
+            let html = '';
+
+            legacyRecSnap.forEach(docSnap => {
+                const data = docSnap.data();
+                html += `
+                    <div class="legacy-item">
+                        <div>
+                            <span style="color:var(--primary-color); font-weight:800;">[ريسيفر]</span>
+                            <b>${data.client || 'عميل'}</b> | ${data.phone || ''} | ${data.model || ''} (${data.price || 0} ج.م)
+                        </div>
+                        <button class="btn-claim" onclick="claimLegacyItem('rec', '${docSnap.id}')">ضم لحسابي 📥</button>
+                    </div>
+                `;
+            });
+
+            legacySrvSnap.forEach(docSnap => {
+                const data = docSnap.data();
+                html += `
+                    <div class="legacy-item">
+                        <div>
+                            <span style="color:var(--green-glow); font-weight:800;">[سيرفر]</span>
+                            <b>${data.client || 'عميل'}</b> | ${data.phone || ''} | سيرفر: ${data.name || ''} (${data.price || 0} ج.م)
+                        </div>
+                        <button class="btn-claim" onclick="claimLegacyItem('srv', '${docSnap.id}')">ضم لحسابي 📥</button>
+                    </div>
+                `;
+            });
+
+            if (!html) {
+                container.innerHTML = '<div style="text-align:center; padding:15px; color:var(--green-glow); font-weight:700;"><i class="fas fa-check-circle"></i> تم فرز ونقل جميع الأوردرات القديمة بالكامل!</div>';
+            } else {
+                container.innerHTML = html;
+            }
+
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = '<div style="text-align:center; padding:15px; color:#ff3366;">حدث خطأ أثناء جلب البيانات القديمة.</div>';
+        }
+    }
+
+    async function claimLegacyItem(type, legacyId) {
+        if (!window.db || !currentUser) return;
+
+        const userKey = sanitizeUserKey(currentUser);
+        const sourceColl = type === 'rec' ? 'receivers' : 'servers';
+        const targetColl = type === 'rec' ? `usr_${userKey}_receivers` : `usr_${userKey}_servers`;
+
+        try {
+            const docRef = window.firestoreTools.doc(window.db, sourceColl, legacyId);
+            const docSnap = await window.firestoreTools.getDoc(docRef);
+
+            if (docSnap.exists()) {
+                await window.firestoreTools.addDoc(window.firestoreTools.collection(window.db, targetColl), docSnap.data());
+                await window.firestoreTools.deleteDoc(docRef);
+                loadLegacyItems();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("حدث خطأ أثناء نقل الأوردر.");
         }
     }
 
@@ -902,11 +1225,13 @@
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
-        document.getElementById('rec-date').value = `${year}-${month}-${day}`;
+        const recDate = document.getElementById('rec-date');
+        if (recDate) recDate.value = `${year}-${month}-${day}`;
 
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
-        document.getElementById('srv-datetime').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        const srvDt = document.getElementById('srv-datetime');
+        if (srvDt) srvDt.value = `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     setInterval(updateClockAndInputs, 1000);
@@ -917,18 +1242,25 @@
     let servers = [];
 
     function initFirebaseRealtimeSync() {
-        if (!window.db) return;
+        if (!window.db || !currentUser) return;
         const { collection, onSnapshot } = window.firestoreTools;
 
-        onSnapshot(collection(window.db, "receivers"), (snapshot) => {
+        const userKey = sanitizeUserKey(currentUser);
+
+        unsubs.forEach(unsub => unsub && unsub());
+        unsubs = [];
+
+        const unsubRec = onSnapshot(collection(window.db, `usr_${userKey}_receivers`), (snapshot) => {
             receivers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderLocal();
         });
+        unsubs.push(unsubRec);
 
-        onSnapshot(collection(window.db, "servers"), (snapshot) => {
+        const unsubSrv = onSnapshot(collection(window.db, `usr_${userKey}_servers`), (snapshot) => {
             servers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderLocal();
         });
+        unsubs.push(unsubSrv);
     }
 
     function switchTab(type) {
@@ -969,8 +1301,9 @@
             createdAt: Date.now()
         };
 
-        if (window.db) {
-            await window.firestoreTools.addDoc(window.firestoreTools.collection(window.db, "receivers"), newObj);
+        if (window.db && currentUser) {
+            const userKey = sanitizeUserKey(currentUser);
+            await window.firestoreTools.addDoc(window.firestoreTools.collection(window.db, `usr_${userKey}_receivers`), newObj);
         }
         document.getElementById('form-rec').reset();
         resetInputsToCurrentTime();
@@ -1001,8 +1334,9 @@
             createdAt: Date.now()
         };
 
-        if (window.db) {
-            await window.firestoreTools.addDoc(window.firestoreTools.collection(window.db, "servers"), newObj);
+        if (window.db && currentUser) {
+            const userKey = sanitizeUserKey(currentUser);
+            await window.firestoreTools.addDoc(window.firestoreTools.collection(window.db, `usr_${userKey}_servers`), newObj);
         }
         document.getElementById('form-srv').reset();
         resetInputsToCurrentTime();
@@ -1010,21 +1344,22 @@
 
     async function deleteRec(id) {
         if (confirm("⚠️ هل أنت متأكد من حذف هذا الأوردر نهائياً؟")) {
-            if (window.db) {
-                await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "receivers", id));
+            if (window.db && currentUser) {
+                const userKey = sanitizeUserKey(currentUser);
+                await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, `usr_${userKey}_receivers`, id));
             }
         }
     }
 
     async function deleteSrv(id) {
         if (confirm("⚠️ هل أنت متأكد من حذف هذا الاشتراك نهائياً؟")) {
-            if (window.db) {
-                await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, "servers", id));
+            if (window.db && currentUser) {
+                const userKey = sanitizeUserKey(currentUser);
+                await window.firestoreTools.deleteDoc(window.firestoreTools.doc(window.db, `usr_${userKey}_servers`, id));
             }
         }
     }
 
-    // دوال تعديل الريسيفر
     function openEditRec(id) {
         const item = receivers.find(r => r.id === id);
         if (!item) return;
@@ -1058,13 +1393,13 @@
             date: document.getElementById('edit-rec-date').value
         };
 
-        if (window.db) {
-            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "receivers", id), updatedData);
+        if (window.db && currentUser) {
+            const userKey = sanitizeUserKey(currentUser);
+            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, `usr_${userKey}_receivers`, id), updatedData);
         }
         closeEditModal('rec');
     }
 
-    // دوال تعديل السيرفر
     function openEditSrv(id) {
         const item = servers.find(s => s.id === id);
         if (!item) return;
@@ -1120,8 +1455,9 @@
             code: authType === 'code' ? document.getElementById('edit-srv-code').value : ''
         };
 
-        if (window.db) {
-            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "servers", id), updatedData);
+        if (window.db && currentUser) {
+            const userKey = sanitizeUserKey(currentUser);
+            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, `usr_${userKey}_servers`, id), updatedData);
         }
         closeEditModal('srv');
     }
@@ -1131,16 +1467,18 @@
     }
 
     async function dismissWarrantyAlert(id) {
-        if (window.db) {
-            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "receivers", id), {
+        if (window.db && currentUser) {
+            const userKey = sanitizeUserKey(currentUser);
+            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, `usr_${userKey}_receivers`, id), {
                 warrantyDismissed: true
             });
         }
     }
 
     async function dismissServerAlert(id) {
-        if (window.db) {
-            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, "servers", id), {
+        if (window.db && currentUser) {
+            const userKey = sanitizeUserKey(currentUser);
+            await window.firestoreTools.updateDoc(window.firestoreTools.doc(window.db, `usr_${userKey}_servers`, id), {
                 expiryDismissed: true
             });
         }
@@ -1151,7 +1489,6 @@
         const oneYearMs = 365 * 24 * 60 * 60 * 1000;
         const oneDayMs = 24 * 60 * 60 * 1000;
 
-        // 1. فحص الريسيفرات خارج الضمان
         const expiredRecs = receivers.filter(r => {
             if (!r.date || r.warrantyDismissed) return false;
             const pDate = new Date(r.date);
@@ -1185,7 +1522,6 @@
             recAlertList.innerHTML = `<div class="alert-empty-text"><i class="fas fa-check-circle"></i> لا توجد أجهزة خارج الضمان حالياً.</div>`;
         }
 
-        // 2. فحص السيرفرات التي تنتهي غداً
         const expiringSrvs = [];
         servers.forEach(s => {
             if (!s.datetime || s.expiryDismissed) return;
@@ -1248,7 +1584,7 @@
         );
 
         if (filteredReceivers.length === 0) {
-            recContainer.innerHTML = `<div class="no-data">لا توجد بيانات مسجلة</div>`;
+            recContainer.innerHTML = `<div class="no-data">لا توجد بيانات مسجلة لهذا الحساب</div>`;
         } else {
             recContainer.innerHTML = filteredReceivers.map(r => `
                 <div class="record-card receiver-card">
@@ -1294,7 +1630,7 @@
         );
 
         if (filteredServers.length === 0) {
-            srvContainer.innerHTML = `<div class="no-data">لا توجد بيانات مسجلة</div>`;
+            srvContainer.innerHTML = `<div class="no-data">لا توجد بيانات مسجلة لهذا الحساب</div>`;
         } else {
             srvContainer.innerHTML = filteredServers.map(s => {
                 let credentialsHtml = '';
@@ -1418,7 +1754,10 @@
     function manualResetSession() {
         if (confirm("هل أنت متأكد من تصفير إحصائيات الوردية الحالية للبدء من جديد؟ (لن تتأثر البيانات والاشتراكات المحفوظة)")) {
             currentShiftStartTime = Date.now();
-            localStorage.setItem('marvel_shift_start_time', currentShiftStartTime);
+            if (currentUser) {
+                const userKey = sanitizeUserKey(currentUser);
+                localStorage.setItem('marvel_shift_' + userKey, currentShiftStartTime);
+            }
             calculateFinancials();
         }
     }
